@@ -1,0 +1,1652 @@
+<!doctype html><html lang="fa"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>هایپر شبانه</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Vazirmatn:wght@400;600;800&display=swap">
+<style>
+/* Layout: full-bleed 3D view; objective strip on top, contextual buttons bottom-right, dialogue panel slides over the bottom third. A single deliberate dark look. */
+:root{
+  --bg:#080b0c;
+  --panel:#0d1214;
+  --line:#2b3a3a;
+  --fg:#dcebe4;
+  --dim:#8aa097;
+  --tube:#c9ffd9;
+  --bad:#e5382f;
+  --ok:#74d69a;
+  --warn:#ffcf5a;
+  --f-body:'Vazirmatn',Tahoma,'Segoe UI',system-ui,sans-serif;
+  --f-display:'Lalezar','Vazirmatn',Tahoma,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.7;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+*{box-sizing:border-box}
+.stage{position:relative;height:100%;overflow:hidden;touch-action:none;outline:none;background:var(--bg)}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+.fx{position:absolute;inset:0;pointer-events:none}
+.vig{background:radial-gradient(ellipse at center,rgba(0,0,0,0) 50%,rgba(0,0,0,.7) 100%)}
+.danger{background:radial-gradient(ellipse at center,rgba(120,0,0,0) 35%,rgba(150,10,5,.9) 100%);opacity:0;transition:opacity .15s}
+.hurt{background:radial-gradient(ellipse at center,rgba(140,0,0,0) 25%,rgba(180,10,5,.9) 100%);opacity:0}
+.hurt.on{animation:hurt .55s ease-out forwards}
+@keyframes hurt{0%{opacity:1}100%{opacity:0}}
+.grain{opacity:.08;mix-blend-mode:screen;animation:grain .5s steps(4) infinite}
+@keyframes grain{0%{background-position:0 0}25%{background-position:-37px 21px}50%{background-position:19px -43px}75%{background-position:-23px -11px}100%{background-position:0 0}}
+.flash{background:#b01810;opacity:0}
+.flash.on{animation:flash .9s ease-out forwards}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+
+.hud{position:absolute;inset:0;pointer-events:none;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hud button{pointer-events:auto}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.obj{background:rgba(8,12,13,.72);border-inline-start:2px solid var(--warn);padding:.35rem .8rem;min-width:0;max-width:min(24rem,70%)}
+.obj small{display:block;color:var(--dim);font-size:.75rem;line-height:1.4}
+.obj b{font-weight:800;font-size:.98rem;display:flex;align-items:center;gap:.6rem}
+.arrow{font-size:1.5rem;line-height:1;color:var(--warn);min-width:1.4em;text-align:center;direction:ltr}
+.held{background:rgba(8,12,13,.72);padding:.35rem .8rem;border-inline-end:2px solid var(--ok);font-size:.9rem;text-align:left;flex:none}
+.held small{display:block;color:var(--dim);font-size:.75rem;line-height:1.4}
+.held .ammo{display:block;color:var(--warn);font-size:.8rem;line-height:1.4}
+.net{margin-top:6px;display:inline-block;background:rgba(8,12,13,.72);border-inline-start:2px solid var(--tube);padding:.1rem .7rem;font-size:.8rem;color:var(--dim)}
+.net[hidden]{display:none}
+.cross{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(220,235,228,.55);transition:transform .08s}
+.cross.on{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+.cross.mk{background:var(--bad);box-shadow:0 0 10px var(--bad);transform:scale(2.4)}
+.caption{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:min(30rem,calc(100% - 32px));padding:.45rem .9rem;background:rgba(8,12,13,.78);border-inline-start:2px solid var(--tube);font-size:.95rem;opacity:0;transition:opacity .3s;text-align:right}
+.caption.on{opacity:1}
+.caption.pa{border-color:var(--bad)}
+.act{position:absolute;bottom:max(18px,env(safe-area-inset-bottom,0px));right:max(16px,env(safe-area-inset-right,0px));min-height:64px;min-width:140px;max-width:60%;padding:.6rem 1.1rem;font-family:var(--f-body);font-weight:800;font-size:1.05rem;color:#06130b;background:var(--ok);border:0;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}
+.act[hidden]{display:none}
+.act:active{transform:translateY(1px);filter:brightness(.9)}
+.act:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.fire{position:absolute;bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 84px);right:max(16px,env(safe-area-inset-right,0px));width:84px;height:84px;border-radius:50%;border:2px solid #ffb3a8;background:rgba(190,40,30,.82);color:#fff;font-family:var(--f-body);font-weight:800;font-size:1rem;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;pointer-events:auto}
+.fire[hidden]{display:none}
+.fire:active{filter:brightness(.8)}
+.hpbar{position:absolute;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));width:min(14rem,34%);height:14px;background:rgba(8,12,13,.8);border:1px solid var(--line)}
+.hpbar[hidden]{display:none}
+.hpfill{height:100%;width:100%;background:var(--bad);transition:width .15s}
+.hint{position:absolute;bottom:max(18px,env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));color:var(--dim);font-size:.75rem;max-width:36%;line-height:1.5}
+@media (pointer:coarse){.hint{display:none}}
+
+.joy{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border:2px solid rgba(220,235,228,.35);border-radius:50%;pointer-events:none;display:none}
+.joy.on{display:block}
+.joy i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(220,235,228,.3)}
+
+.dlg{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;padding-block:12px max(14px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:linear-gradient(to top,rgba(5,8,9,.95) 70%,rgba(5,8,9,0))}
+.dlg[hidden]{display:none}
+.dlgbox{width:100%;max-width:36rem;display:flex;flex-direction:column;gap:10px;text-align:right}
+.who{margin:0;color:var(--warn);font-size:.85rem;font-weight:800}
+.say{margin:0;font-size:1.12rem;line-height:1.8;min-height:3.4rem}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice{font-family:var(--f-body);font-weight:600;font-size:1rem;color:var(--fg);background:rgba(18,26,28,.95);border:1px solid var(--line);padding:.7rem 1rem;min-height:52px;text-align:right;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.choice:hover{border-color:var(--ok)}
+.choice:active{background:rgba(40,56,52,.95)}
+.choice:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+.choice kbd{font-family:var(--f-body);color:var(--dim);font-size:.8rem;margin-inline-start:.5rem}
+
+.overlay{position:absolute;inset:0;display:flex;background:rgba(5,7,9,.92);overflow:auto;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.overlay[hidden]{display:none}
+.overlay{touch-action:pan-y}
+[hidden]{display:none!important}
+.card{margin:auto;width:100%;max-width:30rem;text-align:right}
+.kicker{margin:0;color:var(--dim);font-size:.85rem}
+h1,h2{font-family:var(--f-display);font-weight:400;margin:.1em 0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(3.2rem,13vw,4.8rem);color:var(--tube);text-shadow:0 0 22px rgba(160,255,200,.28)}
+h2{font-size:clamp(2.4rem,10vw,3.4rem)}
+h3{font-family:var(--f-body);font-weight:800;font-size:1.05rem;margin:0 0 .3rem;color:var(--warn)}
+.lead{margin:.2rem 0 1rem;font-size:1.05rem}
+.rules{margin:0 0 1rem;padding:0;list-style:none;display:flex;flex-direction:column;gap:.5rem;font-size:.95rem}
+.rules li{padding-inline-start:.9rem;border-inline-start:1px solid var(--line)}
+.keys{margin:0;color:var(--dim);font-size:.85rem}
+kbd.k{font-family:var(--f-body);font-size:.8rem;border:1px solid var(--line);padding:0 .35rem;color:var(--fg);direction:ltr;display:inline-block;line-height:1.5}
+.warn{color:var(--bad);margin:.5rem 0 0;min-height:1.2em}
+.okmsg{color:var(--ok)}
+.stats{color:var(--dim);font-size:.9rem;margin:.3rem 0 0}
+.btn{font-family:var(--f-body);font-weight:800;font-size:1.05rem;color:#06130b;background:var(--ok);border:0;padding:.7rem 1rem;min-height:56px;cursor:pointer;width:100%;margin-top:1rem;-webkit-tap-highlight-color:transparent}
+.btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.btn:disabled{opacity:.5}
+.btn.alt{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn[hidden]{display:none}
+.sec{margin-top:1.4rem;padding-top:1rem;border-top:1px solid var(--line)}
+.sec p{margin:.2rem 0 .6rem;color:var(--dim);font-size:.85rem}
+.lbl{display:block;font-size:.85rem;color:var(--dim);margin:.4rem 0 .2rem}
+.field{width:100%;font-family:var(--f-body);font-size:1.05rem;color:var(--fg);background:rgba(18,26,28,.95);border:1px solid var(--line);padding:.55rem .9rem;min-height:52px;-webkit-user-select:text;user-select:text;border-radius:0}
+.field:focus-visible{outline:2px solid var(--warn);outline-offset:2px}
+.field.code{direction:ltr;text-align:center;letter-spacing:.3em;text-transform:uppercase;font-weight:800}
+.row{display:flex;gap:.6rem;align-items:stretch;margin-top:.5rem}
+.row .field{flex:1;min-width:0}
+.row .btn{margin-top:0;width:auto;flex:none;min-width:8.5rem}
+.codebig{font-family:var(--f-display);font-size:clamp(3.4rem,17vw,5rem);letter-spacing:.16em;color:var(--warn);direction:ltr;text-align:center;line-height:1.1;margin:.4rem 0;text-shadow:0 0 22px rgba(255,207,90,.25)}
+.plist{list-style:none;margin:.8rem 0;padding:0;display:flex;flex-direction:column;gap:.4rem}
+.plist li{display:flex;align-items:center;gap:.6rem;padding:.5rem .8rem;background:rgba(18,26,28,.85);border-inline-start:2px solid var(--ok)}
+.plist b{font-size:.72rem;font-weight:800;color:var(--warn);border:1px solid var(--warn);padding:0 .4rem}
+.plist i{font-style:normal;font-size:.72rem;color:var(--dim)}
+@media (max-height:520px){.say{font-size:1rem;min-height:2.4rem}.choice{min-height:44px;padding:.4rem .8rem}}
+@media (prefers-reduced-motion:reduce){.grain{animation:none}.flash.on{animation-duration:.3s}.hurt.on{animation-duration:.25s}}
+#rot{display:none;position:fixed;inset:0;z-index:9999;background:#080b0c;color:var(--fg);align-items:center;justify-content:center;text-align:center;padding:24px;font-size:1.2rem;font-weight:800;line-height:1.8}
+
+
+@media (orientation:landscape) and (pointer:coarse){
+  .caption{top:64px}
+  .obj{max-width:min(28rem,50%)}
+  .dlgbox{max-width:44rem}
+  .say{font-size:1rem;min-height:2.4rem;line-height:1.6}
+  .choice{min-height:44px;padding:.4rem .8rem}
+  .choices{gap:6px}
+  .card{max-width:36rem}
+  .act{min-height:56px}
+  .fire{width:76px;height:76px;bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 76px)}
+}
+</style>
+
+<div id="rot" dir="rtl" lang="fa">گوشی را افقی بگیر. این بازی فقط در حالت افقی کار می‌کند.</div>
+<div class="stage" id="stage" dir="rtl" lang="fa" tabindex="0">
+  <canvas id="gl"></canvas>
+  <div class="fx grain" id="grain"></div>
+  <div class="fx vig"></div>
+  <div class="fx danger" id="danger"></div>
+  <div class="fx hurt" id="hurtFx"></div>
+  <div class="fx flash" id="flash"></div>
+  <div class="cross" id="cross"></div>
+
+  <div class="hud" id="hud">
+    <div class="top">
+      <div>
+        <div class="obj"><small>هدف</small><b><span class="arrow" id="arrow"></span><span id="objText">...</span></b></div>
+        <div class="net" id="netChip" hidden></div>
+      </div>
+      <div class="held" id="held"><small>در دست</small><span id="heldName">هیچی</span><span class="ammo" id="ammo" hidden></span></div>
+    </div>
+    <div class="caption" id="caption"></div>
+    <div class="hint">راه رفتن: <kbd class="k">W</kbd><kbd class="k">A</kbd><kbd class="k">S</kbd><kbd class="k">D</kbd> · نگاه: ماوس · عمل: <kbd class="k">E</kbd> · شلیک: کلیک یا <kbd class="k">Space</kbd> · خشاب: <kbd class="k">R</kbd></div>
+    <div class="hpbar" id="hpbar" hidden><div class="hpfill" id="hpfill"></div></div>
+    <button class="fire" id="fireBtn" hidden>شلیک</button>
+    <button class="act" id="act" hidden>صحبت</button>
+  </div>
+  <div class="joy" id="joy"><i id="joyKnob"></i></div>
+
+  <div class="dlg" id="dlg" hidden>
+    <div class="dlgbox">
+      <p class="who" id="who"></p>
+      <p class="say" id="say"></p>
+      <div class="choices" id="choices"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="menu">
+    <div class="card">
+      <p class="kicker">هایپرمارکت ۲۴ ساعته · شیفت شب</p>
+      <h1>هایپر شبانه</h1>
+      <p class="lead">فروشگاه بزرگه و خالی. فقط چند مشتری مانده‌اند و هر کدام چیزی می‌خواهند.</p>
+      <ul class="rules">
+        <li>با مشتری صحبت کن و از بین جواب‌ها یکی را بزن.</li>
+        <li>اگر چیزی خواست، برو از قفسه‌ها بیاورش و تحویلش بده. نام جنس بالای هر کدام نوشته شده.</li>
+        <li>بالای صفحه فلشی می‌گوید هدف کدام طرف است.</li>
+        <li>بعد از مشتری دوم، یک روح توی فروشگاه می‌گردد. تا نگاهش کنی ثابت می‌ماند. فقط یک دقیقه می‌ماند و بعد می‌رود.</li>
+        <li>به حرف مشتری‌ها گوش بده. هر کدام تکه‌ای از ماجرا را می‌دانند.</li>
+        <li>وقتی همه‌ی مشتری‌ها راضی شدند، برو سردخانه‌ی ته فروشگاه و کنار فریزر را بگرد. بعدش دو قاتل وارد می‌شوند. کلت روی صندوق است. هر دو را بزن تا پلیس برسد و در خروج باز شود. بعد فرار کن.</li>
+      </ul>
+      <p class="keys">کامپیوتر: روی صفحه کلیک کن تا ماوس قفل شود، بعد <kbd class="k">W</kbd><kbd class="k">A</kbd><kbd class="k">S</kbd><kbd class="k">D</kbd> برای حرکت، <kbd class="k">E</kbd> برای صحبت یا برداشتن و کلیک چپ یا <kbd class="k">Space</kbd> برای شلیک. در گفتگو، شماره‌ی جواب را بزن. موبایل: سمت چپ صفحه انگشت را بکش تا راه بروی، سمت راست بکش تا بچرخی، دکمه‌ی سبز برای عمل و دکمه‌ی قرمز برای شلیک. با هدفون بهتر است.</p>
+      <button class="btn" id="startBtn">شروع شیفت (تک‌نفره)</button>
+      <button class="btn alt" id="shopBtn" hidden>حالت بی‌پایان: فروشگاه (تک‌نفره)</button>
+
+      <div class="sec">
+        <h3>بازی آنلاین با دوستان</h3>
+        <p>گروه بساز و کد پنج‌حرفی را به دوستانت بده. همه با هم مشتری‌ها را راضی می‌کنید و با هم قاتل‌ها را می‌زنید. حساب و ثبت‌نام لازم نیست. دوستانت باید وارد حساب خودشان شده باشند و از منوی اشتراک‌گذاری همین بازی دعوت شده باشند.</p>
+        <label class="lbl" for="nick">اسم تو</label>
+        <input class="field" id="nick" type="text" maxlength="14" placeholder="مثلاً سجاد" autocomplete="off">
+        <button class="btn alt" id="createBtn">ساخت گروه</button>
+        <label class="lbl" for="codeIn">کد گروه</label>
+        <div class="row">
+          <input class="field code" id="codeIn" type="text" maxlength="5" placeholder="ABCDE" autocomplete="off" autocapitalize="characters" spellcheck="false">
+          <button class="btn alt" id="joinBtn">ورود به گروه</button>
+        </div>
+      </div>
+      <p class="warn" id="menuMsg"></p>
+    </div>
+  </div>
+
+  <div class="overlay" id="lobby" hidden>
+    <div class="card">
+      <p class="kicker">گروه آنلاین · لابی</p>
+      <h2>کد گروه</h2>
+      <div class="codebig" id="codeBig">-----</div>
+      <button class="btn alt" id="copyBtn">کپی کد</button>
+      <ul class="plist" id="plist"></ul>
+      <p class="stats" id="lobbyWait" hidden>منتظر بمان تا سازنده‌ی گروه شیفت را شروع کند.</p>
+      <p class="warn" id="lobbyMsg"></p>
+      <button class="btn" id="goBtn" hidden>شروع شیفت برای همه</button>
+      <button class="btn alt" id="leaveBtn">خروج از گروه</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="pc" hidden>
+    <div class="card">
+      <button class="btn alt" id="pcClose2" style="margin-top:0">خروج از کامپیوتر</button>
+      <h2>کامپیوتر سفارش</h2>
+      <p class="stats" id="pcMoney"></p>
+      <p class="stats">قیمت خرید ۶۰٪ قیمت فروش است. سفارش حدود ۱۵ ثانیه بعد به انبار می‌رسد.</p>
+      <ul class="plist" id="pcList"></ul>
+      <button class="btn alt" id="pcClose">خروج از کامپیوتر</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="end" hidden>
+    <div class="card">
+      <h2 id="endTitle"></h2>
+      <p class="lead" id="endText"></p>
+      <p class="stats" id="endStats"></p>
+      <p class="stats" id="endWait" hidden>منتظر سازنده‌ی گروه برای شروع دوباره...</p>
+      <button class="btn" id="retryBtn">دوباره</button>
+      <button class="btn alt" id="exitBtn">منوی اصلی</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const T = window.THREE;
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+document.querySelector('.rules').innerHTML = '<li>با مشتری حرف بزن و یکی از جواب‌ها را بزن.</li><li>اگر چیزی خواست، از قفسه‌ها (یا طبقه بالا) بیاور و تحویل بده.</li><li>مشتری‌ها همیشه می‌آیند. بازی تمام نمی‌شود.</li><li>دوربین‌ها را از کامپیوتر کنار صندوق چک کن.</li>';
+document.querySelector('.lead').textContent = 'فروشگاه شبانه‌ی بامزه! مشتری‌ها هر کدام چیز عجیبی می‌خواهند. تا دلت می‌خواهد بازی کن.';
+document.querySelector('.kicker').textContent = 'هایپرمارکت ۲۴ ساعته';
+document.querySelector('.rules').innerHTML = '<li>مشتری‌ها یک تا پنج جنس می‌خواهند. بالای سرشان نوشته شده.</li><li>جنس‌ها را از قفسه‌ها (پایین و طبقه‌ی بالا) بردار و به مشتری تحویل بده تا پولش را بگیری.</li><li>موجودی هر جنس تمام می‌شود. از کامپیوتر کنار صندوق جنس جدید بخر.</li><li>دوربین‌های مداربسته هم از همان کامپیوتر است. بازی پایان ندارد.</li>';
+document.querySelector('.lead').textContent = 'فروشگاه بزرگ و دو طبقه. مشتری‌ها می‌آیند و جنس می‌خواهند.';
+$('startBtn').textContent = 'شروع بازی (تک‌نفره)'; $('goBtn').textContent = 'شروع بازی برای همه';
+if (!T){ $('menuMsg').textContent = 'موتور سه‌بعدی بارگذاری نشد. صفحه را دوباره باز کن.'; $('startBtn').disabled = true; return; }
+
+const rand = (a,b) => a + Math.random()*(b-a);
+const pick = a => a[(Math.random()*a.length)|0];
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const FA = '۰۱۲۳۴۵۶۷۸۹';
+const fa = n => String(n).replace(/\d/g, d => FA[d]);
+const wrapAng = a => { while (a > Math.PI) a -= Math.PI*2; while (a < -Math.PI) a += Math.PI*2; return a; };
+
+/* grain */
+try{
+  const c = document.createElement('canvas'); c.width = c.height = 96;
+  const x = c.getContext('2d'); const im = x.createImageData(96,96);
+  for (let i=0;i<im.data.length;i+=4){ const v = Math.random()*255; im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=255; }
+  x.putImageData(im,0,0); $('grain').style.backgroundImage = 'url(' + c.toDataURL() + ')';
+}catch(e){}
+
+/* ---------- renderer ---------- */
+let renderer;
+try{ renderer = new T.WebGLRenderer({canvas:$('gl'), antialias:false, powerPreference:'high-performance'}); }
+catch(e){ $('menuMsg').textContent = 'مرورگر شما WebGL را پشتیبانی نمی‌کند.'; $('startBtn').disabled = true; return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5)*0.6);
+renderer.setClearColor(0x080b0c);
+const scene = new T.Scene();
+scene.background = new T.Color(0x080b0c);
+scene.fog = new T.FogExp2(0x080b0c, 0.045);
+const camera = new T.PerspectiveCamera(72,1,0.05,70);
+camera.rotation.order = 'YXZ';
+scene.add(camera);
+function resize(){
+  const w = stage.clientWidth || window.innerWidth, h = stage.clientHeight || window.innerHeight;
+  renderer.setSize(w,h,false);
+  const a = w/h; camera.aspect = a;
+  camera.fov = a < 1.2 ? clamp(2*Math.atan(Math.tan(33*Math.PI/180)/a)*180/Math.PI, 72, 100) : 72;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+
+/* ---------- textures ---------- */
+function canvasTex(w,h,draw,rx,ry){
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'),w,h);
+  const t = new T.CanvasTexture(c);
+  t.magFilter = T.NearestFilter; t.minFilter = T.NearestFilter; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(rx||1, ry||1);
+  return t;
+}
+function grime(x,w,h,base,n,amt){
+  x.fillStyle = base; x.fillRect(0,0,w,h);
+  for (let i=0;i<n;i++){
+    x.fillStyle = Math.random()<0.5 ? 'rgba(255,255,255,'+(Math.random()*amt)+')' : 'rgba(0,0,0,'+(Math.random()*amt*1.6)+')';
+    x.fillRect((Math.random()*w)|0,(Math.random()*h)|0,1+((Math.random()*2)|0),1);
+  }
+}
+const floorTex = canvasTex(64,64,(x,w,h)=>{
+  grime(x,w,h,'#9aa39d',500,0.2); x.fillStyle='rgba(0,0,0,.28)'; x.fillRect(0,0,32,32); x.fillRect(32,32,32,32);
+  x.fillStyle='rgba(0,0,0,.4)'; x.fillRect(0,0,w,1); x.fillRect(0,0,1,h);
+},14,12);
+const wallTex = canvasTex(64,64,(x,w,h)=>grime(x,w,h,'#aab5ab',500,0.2),8,2);
+const ceilTex = canvasTex(32,32,(x,w,h)=>{ grime(x,w,h,'#8e9890',100,0.1); x.fillStyle='rgba(0,0,0,.35)'; x.fillRect(0,0,w,1); x.fillRect(0,0,1,h); },14,12);
+function productTex(pal){
+  return canvasTex(128,64,(x,w,h)=>{
+    x.fillStyle='#20262a'; x.fillRect(0,0,w,h);
+    for (let lv=0;lv<4;lv++){
+      const y = lv*16; x.fillStyle='#454c52'; x.fillRect(0,y+14,w,2);
+      let px = 1;
+      while (px < w-6){
+        const bw = 4+((Math.random()*5)|0), bh = 7+((Math.random()*6)|0);
+        x.fillStyle = pick(pal); x.fillRect(px,y+14-bh,bw,bh);
+        x.fillStyle='rgba(255,255,255,.2)'; x.fillRect(px,y+14-bh,bw,1);
+        px += bw+1;
+      }
+    }
+  },4,1);
+}
+
+/* ---------- labels (redrawn once the font loads) ---------- */
+const labels = [];
+function labelSprite(text,w,h,fs,col,bg,sx,sy){
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const tex = new T.CanvasTexture(c);
+  const draw = ()=>{
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = bg; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.strokeRect(2,2,w-4,h-4);
+    ctx.fillStyle = col; ctx.font = '800 '+fs+'px Vazirmatn, Tahoma, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+    ctx.fillText(text,w/2,h/2+2); tex.needsUpdate = true;
+  };
+  draw(); labels.push(draw);
+  const s = new T.Sprite(new T.SpriteMaterial({map:tex,transparent:true,fog:false}));
+  s.scale.set(sx,sy,1); return s;
+}
+if (document.fonts && document.fonts.load){
+  Promise.race([document.fonts.load('800 32px Vazirmatn'), new Promise(r=>setTimeout(r,2500))]).then(()=>labels.forEach(f=>f())).catch(()=>{});
+}
+
+/* ---------- store ---------- */
+const XMIN=-13.7, XMAX=13.7, ZMIN=-11.7, ZMAX=11.7, CEIL=3.4;
+const boxes = [];                       // collision boxes {x0,x1,z0,z1}
+const mDark = new T.MeshLambertMaterial({color:0x2c3236});
+const mMetal = new T.MeshLambertMaterial({color:0x666e72});
+function addBox(w,h,d,x,y,z,mat,collide){
+  const m = new T.Mesh(new T.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); scene.add(m);
+  if (collide) boxes.push({x0:x-w/2,x1:x+w/2,z0:z-d/2,z1:z+d/2});
+  return m;
+}
+const floorM = new T.Mesh(new T.PlaneGeometry(28,24,28,24), new T.MeshLambertMaterial({map:floorTex,color:0xc8d2cc}));
+floorM.rotation.x = -Math.PI/2; scene.add(floorM);
+const ceilM = new T.Mesh(new T.PlaneGeometry(28,24,28,24), new T.MeshLambertMaterial({map:ceilTex,color:0xb0b8b2}));
+ceilM.rotation.x = Math.PI/2; ceilM.position.y = CEIL; scene.add(ceilM);
+const wallMat = new T.MeshLambertMaterial({map:wallTex,color:0xc4cfc6,side:T.DoubleSide});
+function wall(w,x,z,ry){ const m = new T.Mesh(new T.PlaneGeometry(w,CEIL,Math.round(w),4),wallMat); m.position.set(x,CEIL/2,z); m.rotation.y = ry; scene.add(m); }
+wall(28,0,-12,0); wall(28,0,12,Math.PI); wall(24,-14,0,Math.PI/2); wall(24,14,0,-Math.PI/2);
+
+// shelves
+const SHELVES = [
+  {x:-10, name:'نان و شیرینی', pal:['#d9a441','#c97a2b','#e8d29a','#a8642a','#f0e0b8']},
+  {x:-5,  name:'نوشیدنی',       pal:['#3a8fd9','#5ac0e8','#e6c33a','#4cc27a','#d94a3a']},
+  {x:0,   name:'تنقلات',        pal:['#d94a3a','#e6c33a','#e07a2a','#7a3ab8','#4cc27a']},
+  {x:5,   name:'چای و برنج',   pal:['#5a8a3a','#d8d0a8','#8a5a2a','#c9a52a','#e8e0c8']},
+  {x:10,  name:'کنسرو',         pal:['#b8372c','#c9a52a','#7a8a8a','#3f9e5f','#d8d8d0']}
+];
+for (const s of SHELVES){
+  addBox(1.2,1.9,10, s.x,0.95,-1, mDark, true);
+  const tex = productTex(s.pal);
+  const mat = new T.MeshLambertMaterial({map:tex,color:0xd0d6d0});
+  const a = new T.Mesh(new T.PlaneGeometry(10,1.8,10,1),mat); a.position.set(s.x+0.61,0.95,-1); a.rotation.y = Math.PI/2; scene.add(a);
+  const b = new T.Mesh(new T.PlaneGeometry(10,1.8,10,1),mat); b.position.set(s.x-0.61,0.95,-1); b.rotation.y = -Math.PI/2; scene.add(b);
+  addBox(1.3,0.06,10.1, s.x,1.92,-1, mMetal);
+  const sg = labelSprite(s.name,256,64,34,'#dff5e6','rgba(10,18,14,.88)',2.6,0.65);
+  sg.position.set(s.x,2.85,4.6); scene.add(sg);
+  const sg2 = labelSprite(s.name,256,64,34,'#dff5e6','rgba(10,18,14,.88)',2.6,0.65);
+  sg2.position.set(s.x,2.85,-6.6); scene.add(sg2);
+}
+// dairy wall
+addBox(26,0.9,0.9, 0,0.45,-11.5, mMetal, true);
+const fridgeTex = canvasTex(64,32,(x,w,h)=>{
+  x.fillStyle='#1b3340'; x.fillRect(0,0,w,h);
+  for (let i=0;i<h;i+=8){ x.fillStyle='#2a4d60'; x.fillRect(0,i+6,w,2); }
+  for (let i=0;i<30;i++){ x.fillStyle=pick(['#eef','#8cf','#fe9','#cde']); x.fillRect((Math.random()*w)|0,((Math.random()*4)|0)*8,3,5); }
+},6,1);
+const fridge = new T.Mesh(new T.PlaneGeometry(26,2.2,26,2), new T.MeshBasicMaterial({map:fridgeTex,color:0x9fd0e8}));
+fridge.position.set(0,2.0,-11.94); scene.add(fridge);
+const dairySign = labelSprite('لبنیات',256,64,36,'#bfe8ff','rgba(8,20,28,.9)',3.2,0.8);
+dairySign.position.set(0,3.1,-11.3); scene.add(dairySign);
+
+// checkout counters
+for (const cx of [-8,-3]){
+  addBox(3,1.0,1.1, cx,0.5,7.4, new T.MeshLambertMaterial({color:0x6a6258}), true);
+  addBox(0.5,0.3,0.4, cx+0.8,1.15,7.4, new T.MeshLambertMaterial({color:0x32383c}));
+  addBox(0.4,0.12,0.3, cx+0.8,1.36,7.4, new T.MeshBasicMaterial({color:0x2a9a62}));
+}
+const regSign = labelSprite('صندوق',256,64,34,'#ffe9a8','rgba(24,18,6,.9)',2.2,0.55);
+regSign.position.set(-5.5,2.6,7.4); scene.add(regSign);
+
+// entrance / exit door (z = +12)
+const doorFrame = addBox(3.4,2.7,0.1, 9,1.35,11.92, new T.MeshLambertMaterial({color:0x2a2f33}));
+const doorGlass = new T.Mesh(new T.PlaneGeometry(3.0,2.4), new T.MeshBasicMaterial({color:0x10202a}));
+doorGlass.position.set(9,1.3,11.86); doorGlass.rotation.y = Math.PI; scene.add(doorGlass);
+const exitSign = labelSprite('خروج',192,56,34,'#7affa8','rgba(2,20,8,.95)',1.6,0.46);
+exitSign.position.set(9,2.95,11.8); scene.add(exitSign);
+const exitLight = new T.PointLight(0xff3020,0,10); exitLight.position.set(9,2.2,10.6); scene.add(exitLight);
+
+// cold storage freezer (mission)
+const FZ = {x:12.2, z:-10.9};
+addBox(1.3,2.1,0.7, 12.2,1.05,-11.6, new T.MeshLambertMaterial({color:0xcfe6ee}));
+const fzGlow = new T.PointLight(0x9fdcff,0,7); fzGlow.position.set(12.2,2.0,-10.2); scene.add(fzGlow);
+const fzSign = labelSprite('سردخانه · فریزر',256,64,30,'#bfe8ff','rgba(8,20,28,.9)',2.4,0.6); fzSign.position.set(12.2,2.55,-10.9); scene.add(fzSign);
+const evBox = new T.Mesh(new T.BoxGeometry(0.4,0.25,0.3), new T.MeshBasicMaterial({color:0xffcf5a})); evBox.position.set(12.2,1.1,-10.95); scene.add(evBox);
+const evLab = labelSprite('جعبه‌ی فروش',192,56,30,'#ffcf5a','rgba(24,16,4,.9)',1.1,0.32); evLab.position.set(12.2,1.55,-10.95); scene.add(evLab);
+evBox.visible = false; evLab.visible = false;
+
+// lights
+const ambient = new T.AmbientLight(0x6a7a74,1.0); scene.add(ambient);
+const hemi = new T.HemisphereLight(0xc9ffe0,0x202824,0.35); scene.add(hemi);
+const pts = [];
+for (const lx of [-8,0,8]) for (const lz of [-7,3]){
+  const l = new T.PointLight(0xd6ffe2,0.55,15); l.position.set(lx,3.0,lz); scene.add(l); pts.push(l);
+}
+const tubeMat = new T.MeshBasicMaterial({color:0xd8ffe4});
+const tubes = [];
+for (let tx=-11; tx<=11; tx+=5.5) for (let tz=-9; tz<=9; tz+=4.5){
+  const m = new T.Mesh(new T.BoxGeometry(0.15,0.05,2.2), tubeMat); m.position.set(tx,CEIL-0.04,tz); scene.add(m); tubes.push(m);
+}
+
+/* ---------- second floor ---------- */
+const UPY = 3.45, boxes1 = []; let hitLvl = 0;
+ceilM.visible = false;
+const slabM = new T.MeshLambertMaterial({color:0x8e9890});
+const slab = new T.Mesh(new T.BoxGeometry(24.8,0.12,24), slabM); slab.position.set(-1.3,UPY-0.06,0); scene.add(slab);
+const slab2 = new T.Mesh(new T.BoxGeometry(2.6,0.12,13.2), slabM); slab2.position.set(12.4,UPY-0.06,-5.4); scene.add(slab2);
+const upTex = floorTex.clone(); upTex.needsUpdate = true; upTex.repeat.set(14,12);
+const upFloor = new T.Mesh(new T.PlaneGeometry(24.8,24), new T.MeshLambertMaterial({map:upTex,color:0xc8d2cc})); upFloor.rotation.x = -Math.PI/2; upFloor.position.set(-1.3,UPY+0.01,0); scene.add(upFloor);
+const upFloor2 = new T.Mesh(new T.PlaneGeometry(2.6,13.2), new T.MeshLambertMaterial({color:0x9aa39d})); upFloor2.rotation.x = -Math.PI/2; upFloor2.position.set(12.4,UPY+0.01,-5.4); scene.add(upFloor2);
+const upCeil = new T.Mesh(new T.PlaneGeometry(28,24), new T.MeshLambertMaterial({map:ceilTex,color:0xb0b8b2})); upCeil.rotation.x = Math.PI/2; upCeil.position.y = UPY+CEIL; scene.add(upCeil);
+const tubeM2 = new T.MeshBasicMaterial({color:0xd8ffe4});
+for (let tx=-11; tx<=11; tx+=5.5) for (let tz=-9; tz<=9; tz+=4.5){ const m = new T.Mesh(new T.BoxGeometry(0.15,0.05,2.2), tubeM2); m.position.set(tx,UPY+CEIL-0.04,tz); scene.add(m); }
+tubes.forEach(t=>{ t.position.y = UPY-0.17; });
+for (const [w,x,z,ry] of [[28,0,-12,0],[24,-14,0,Math.PI/2],[24,14,0,-Math.PI/2],[28,0,12,Math.PI]]){ const m = new T.Mesh(new T.PlaneGeometry(w,CEIL),wallMat); m.position.set(x,UPY+CEIL/2,z); m.rotation.y = ry; scene.add(m); }
+for (const [lx,lz] of [[-6,-6],[6,-6],[-6,6],[6,6]]){ const l = new T.PointLight(0xd6ffe2,0.6,13); l.position.set(lx,UPY+2.8,lz); scene.add(l); }
+for (const [sx,sn] of [[-9,'بهداشتی'],[-3,'لوازم خانگی'],[3,'لوازم تحریر']]){
+  const m = new T.Mesh(new T.BoxGeometry(1.2,1.9,8),mDark); m.position.set(sx,UPY+0.95,-6.5); scene.add(m);
+  boxes1.push({x0:sx-0.6,x1:sx+0.6,z0:-10.5,z1:-2.5});
+  const sg = labelSprite(sn,256,64,34,'#dff5e6','rgba(10,18,14,.88)',2.6,0.65); sg.position.set(sx,UPY+2.5,-2.3); scene.add(sg);
+}
+const rail = new T.Mesh(new T.BoxGeometry(0.08,0.9,10.8), mMetal); rail.position.set(11.1,UPY+0.45,6.6); scene.add(rail);
+boxes1.push({x0:11.0,x1:11.2,z0:1.2,z1:12});
+for (const [sx,sn] of [[-9,'پوشاک'],[-3,'آشپزخانه'],[3,'دیجیتال']]){
+  const m = new T.Mesh(new T.BoxGeometry(1.2,1.9,8),mDark); m.position.set(sx,UPY+0.95,6.5); scene.add(m);
+  boxes1.push({x0:sx-0.6,x1:sx+0.6,z0:2.5,z1:10.5});
+  const sg = labelSprite(sn,256,64,34,'#dff5e6','rgba(10,18,14,.88)',2.6,0.65); sg.position.set(sx,UPY+2.5,10.8); scene.add(sg);
+}
+boxes.push({x0:11.0,x1:11.2,z0:1.2,z1:9.2},{x0:11.0,x1:13.7,z0:0.9,z1:1.4});
+const rampTex = canvasTex(32,64,(x,w,h)=>{ x.fillStyle='#5b6560'; x.fillRect(0,0,w,h); for (let i=0;i<h;i+=4){ x.fillStyle='#8a948e'; x.fillRect(0,i,w,1); } });
+const ramp = new T.Mesh(new T.PlaneGeometry(2.5,8.71), new T.MeshLambertMaterial({map:rampTex,color:0xdde6e0,side:T.DoubleSide})); ramp.rotation.x = -Math.PI/2+0.407; ramp.position.set(12.45,UPY/2,5.2); scene.add(ramp);
+const rrail = new T.Mesh(new T.BoxGeometry(0.08,0.9,8.71), mMetal); rrail.rotation.x = 0.407; rrail.position.set(11.1,UPY/2+0.45,5.2); scene.add(rrail);
+const stSign = labelSprite('پله‌ها',192,56,34,'#ffe9a8','rgba(24,18,6,.9)',1.3,0.38); stSign.position.set(12.4,2.3,9.4); scene.add(stSign);
+function floorH(x,z){ if (x>=11.2 && z>=1.2 && z<=9.2) return UPY*(9.2-z)/8; return p.lv ? UPY : 0; }
+/* ---------- items ---------- */
+const ITEMS_DEF = [
+  // dairy wall
+  {id:'milk',  name:'شیر',        col:0xe8f4ff, x:0,     y:1.05, z:-10.9},
+  {id:'eggs',  name:'تخم‌مرغ',   col:0xe8c88a, x:-6,    y:1.05, z:-10.9},
+  {id:'cheese',name:'پنیر',       col:0xffd45a, x:6,     y:1.05, z:-10.9},
+  {id:'yogurt',name:'ماست',       col:0xf4f4ee, x:-3,    y:1.05, z:-10.9},
+  {id:'butter',name:'کره',        col:0xf5e08a, x:3,     y:1.05, z:-10.9},
+  {id:'cream', name:'خامه',       col:0xfaf6ea, x:9,     y:1.05, z:-10.9},
+  {id:'doogh', name:'دوغ',        col:0x9fd8c4, x:-9,    y:1.05, z:-10.9},
+  {id:'sausage',name:'سوسیس',    col:0xd9705a, x:-11.5, y:1.05, z:-10.9},
+  // bread and sweets (x=-10 shelf, east face)
+  {id:'bread', name:'نان',        col:0xc98a3a, x:-9.25, y:1.0,  z:0},
+  {id:'cake',  name:'کیک',        col:0xe6a3b8, x:-9.25, y:1.0,  z:-3.5},
+  {id:'biscuit',name:'بیسکویت',  col:0xd8b070, x:-9.25, y:1.0,  z:2.8},
+  // drinks (x=-5 shelf)
+  {id:'water', name:'آب',         col:0x4aa8f0, x:-4.3,  y:1.0,  z:-2.5},
+  {id:'juice', name:'آبمیوه',     col:0xf0a030, x:-4.3,  y:1.0,  z:2.2},
+  {id:'soda',  name:'نوشابه',     col:0xb03030, x:-5.75, y:1.0,  z:-1},
+  {id:'malt',  name:'ماءالشعیر', col:0x8a6a30, x:-5.75, y:1.0,  z:2.8},
+  // snacks (x=0 shelf)
+  {id:'chips', name:'چیپس نمکی',       col:0xf0d050, x:0.75,  y:1.0,  z:1.5},
+  {id:'choco', name:'شکلات',      col:0x6a3a22, x:0.75,  y:1.0,  z:-3.5},
+  {id:'puff',  name:'پفک',        col:0xf4b84a, x:-0.75, y:1.0,  z:-3},
+  {id:'nuts',  name:'آجیل',       col:0xb88a4a, x:-0.75, y:1.0,  z:1.8},
+  // tea and rice (x=5 shelf)
+  {id:'tea',   name:'چای',        col:0x58b858, x:4.3,   y:1.0,  z:1},
+  {id:'sugar', name:'شکر',        col:0xf0f0f0, x:4.3,   y:1.0,  z:-3.2},
+  {id:'oil',   name:'روغن',       col:0xe8c830, x:5.75,  y:1.0,  z:0},
+  {id:'pasta', name:'ماکارونی',  col:0xe8d070, x:5.75,  y:1.0,  z:-3.5},
+  // cans and grains (x=10 shelf)
+  {id:'rice',  name:'برنج',       col:0xf0e8d0, x:9.3,   y:1.0,  z:-3},
+  {id:'lentil',name:'عدس',        col:0xc86a30, x:9.3,   y:1.0,  z:1.5},
+  {id:'beans', name:'لوبیا',      col:0xa03030, x:9.3,   y:1.0,  z:-5},
+  {id:'tuna',  name:'تن ماهی',    col:0x3a78c8, x:10.75, y:1.0,  z:-1},
+  {id:'paste', name:'رب',         col:0xd03020, x:10.75, y:1.0,  z:2.5}
+];
+[['soap','صابون',0xf0b8d0,-9.75,-9],['shampoo','شامپو',0x58c8b8,-9.75,-5],['tissue','دستمال',0xeef2ff,-8.25,-8],['toothpaste','خمیردندان',0x58a0f0,-8.25,-4],['battery','باتری',0xf0c030,-3.75,-9],['bulb','لامپ',0xfff0a0,-3.75,-5],['detergent','پودر لباسشویی',0x4878e0,-2.25,-8],['mask','ماسک',0xb8e0f0,-2.25,-4],['notebook','دفتر',0xd04848,2.25,-8],['pen','خودکار',0x2a50c0,3.75,-5],['socks','جوراب',0xe05a5a,-9.75,4],['hat','کلاه',0x5a8a4a,-9.75,8],['umbrella','چتر',0x7a3ab8,-8.25,4.5],['doll','عروسک',0xf0a0c8,-8.25,8],['cup','لیوان',0xf0f0e0,-3.75,4],['plate','بشقاب',0xe8e0c8,-3.75,8],['ball','توپ',0xf08030,-2.25,4.5],['headphones','هدفون',0x303a48,2.25,4],['charger','شارژر',0xe8e8e8,2.25,8],['phonecase','قاب گوشی',0x30a0a0,3.75,6]].forEach(a=>ITEMS_DEF.push({id:a[0],name:a[1],col:a[2],x:a[3],y:UPY+1.0,z:a[4],lv:1}));
+/* drinks fridge with opening door */
+const FRX = 12.9, FRZ = -5.0, FRIDGE = {water:1,soda:1,doogh:1}; let frOpen = false;
+fzSign.visible = false;
+const frM = new T.MeshLambertMaterial({color:0xdfe8ea}), frIn = new T.MeshLambertMaterial({color:0xbfd4da,emissive:0x8fb0b8,emissiveIntensity:0.35});
+addBox(0.06,2.1,1.7,13.87,1.05,FRZ,frM); addBox(0.95,0.06,1.7,13.4,2.1,FRZ,frM); addBox(0.95,0.08,1.7,13.4,0.04,FRZ,frM);
+addBox(0.95,2.1,0.06,13.4,1.05,FRZ-0.82,frM); addBox(0.95,2.1,0.06,13.4,1.05,FRZ+0.82,frM);
+for (const y of [0.62,1.07,1.52]) addBox(0.9,0.04,1.6,13.4,y,FRZ,frIn);
+boxes.push({x0:12.95,x1:13.95,z0:FRZ-0.85,z1:FRZ+0.85});
+const frDoor = new T.Group(); frDoor.position.set(12.92,0,FRZ+0.85); scene.add(frDoor);
+{ const gl = new T.Mesh(new T.BoxGeometry(0.05,2.0,1.7), new T.MeshLambertMaterial({color:0x9ec8d8,transparent:true,opacity:0.3})); gl.position.set(0,1.05,-0.85); frDoor.add(gl);
+  const hd = new T.Mesh(new T.BoxGeometry(0.06,0.5,0.04), new T.MeshLambertMaterial({color:0xcfd6da})); hd.position.set(-0.05,1.05,-1.55); frDoor.add(hd); }
+const frSign = labelSprite('یخچال نوشیدنی',256,64,30,'#bfe8ff','rgba(8,20,28,.9)',2.2,0.55); frSign.position.set(13.4,2.55,FRZ); scene.add(frSign);
+for (const [id,x,y,z] of [['water',13.4,0.82,FRZ],['soda',13.4,1.18,FRZ],['doogh',13.4,1.74,FRZ]]){ const d = ITEMS_DEF.find(q=>q.id===id); d.x = x; d.y = y; d.z = z; }
+const frClose = document.createElement('button'); frClose.type = 'button'; frClose.hidden = true; frClose.textContent = 'بستن در'; frClose.className = 'act';
+frClose.style.cssText = 'bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 76px);background:#9fd0e8'; frClose.onclick = ()=>{ frOpen = false; cfOpen = false; A.click(); }; $('hud').appendChild(frClose);
+/* chest freezer on wheels with ice cream */
+const CFX = 4.5, CFZ = 8.8; let cfOpen = false;
+FRIDGE.icecone = 1; FRIDGE.icebar = 1; FRIDGE.icecup = 1;
+ITEMS_DEF.push({id:'icecone',name:'بستنی قیفی',col:0xf0a8c8,x:3.95,y:0.42,z:CFZ},{id:'icebar',name:'بستنی چوبی',col:0x6a3a22,x:4.5,y:0.42,z:CFZ},{id:'icecup',name:'بستنی لیوانی',col:0xf4e8c0,x:5.05,y:0.42,z:CFZ});
+ITEMS_DEF.push(
+ {id:'chips_vin',name:'چیپس سرکه‌ای',col:0x3a8fd9,x:0.75,y:1.0,z:3.2},
+ {id:'chips_onion',name:'چیپس پیاز جعفری',col:0x58b848,x:0.75,y:1.0,z:-0.2},
+ {id:'chips_hot',name:'چیپس تند',col:0xd93a2a,x:0.75,y:1.0,z:-5.3},
+ {id:'chips_tom',name:'چیپس گوجه‌ای',col:0xe8602a,x:-0.75,y:1.0,z:-0.6});
+const cfM = new T.MeshLambertMaterial({color:0xe8f0f2}), cfIn = new T.MeshLambertMaterial({color:0xcfe0e6,emissive:0x9fc0c8,emissiveIntensity:0.4});
+addBox(1.8,0.7,0.06,CFX,0.55,CFZ-0.46,cfM); addBox(1.8,0.7,0.06,CFX,0.55,CFZ+0.46,cfM);
+addBox(0.06,0.7,0.98,CFX-0.87,0.55,CFZ,cfM); addBox(0.06,0.7,0.98,CFX+0.87,0.55,CFZ,cfM);
+addBox(1.74,0.05,0.9,CFX,0.24,CFZ,cfIn);
+boxes.push({x0:CFX-0.9,x1:CFX+0.9,z0:CFZ-0.49,z1:CFZ+0.49});
+for (const [wx,wz] of [[-0.75,-0.35],[0.75,-0.35],[-0.75,0.35],[0.75,0.35]]){ const w = new T.Mesh(new T.CylinderGeometry(0.1,0.1,0.07,10),new T.MeshLambertMaterial({color:0x222222})); w.rotation.z = Math.PI/2; w.position.set(CFX+wx,0.1,CFZ+wz); scene.add(w); }
+const cfLid = new T.Group(); cfLid.position.set(CFX,0.9,CFZ+0.49); scene.add(cfLid);
+{ const lm = new T.Mesh(new T.BoxGeometry(1.84,0.05,0.98), new T.MeshLambertMaterial({color:0xeaf4f8,transparent:true,opacity:0.55})); lm.position.set(0,0.03,-0.49); cfLid.add(lm); }
+const cfSign = labelSprite('فریزر بستنی',256,64,30,'#ffd0e4','rgba(28,10,20,.9)',2.2,0.55); cfSign.position.set(CFX,1.6,CFZ); scene.add(cfSign);
+ITEMS_DEF.forEach(d=>{ if (d.id==='puff') d.name = 'پفک نمکی'; });
+const PT = {milk:'carton',cream:'carton',yogurt:'cup',butter:'box',cheese:'box',eggs:'eggs',doogh:'bottle',sausage:'sausage',bread:'bag',cake:'box',biscuit:'bag',water:'bottle',juice:'carton',soda:'can',malt:'can',chips:'bag',choco:'box',puff:'bag',nuts:'bag',tea:'box',sugar:'bag',oil:'bottle',pasta:'bag',rice:'bag',lentil:'bag',beans:'can',tuna:'can',paste:'can',soap:'box',shampoo:'bottle',tissue:'box',toothpaste:'tube',battery:'can',bulb:'bulb',detergent:'box',mask:'box',notebook:'flat',pen:'pen',socks:'flat',hat:'hat',umbrella:'umbrella',doll:'doll',cup:'cup',plate:'plate',ball:'ball',headphones:'phones',charger:'box',phonecase:'flat'};
+PT.icecone = 'cone'; PT.icebar = 'bar'; PT.icecup = 'cup';
+PT.chips_vin = PT.chips_onion = PT.chips_hot = PT.chips_tom = 'bag';
+function makeProduct(d){
+  const g = new T.Group(), c = d.col, t = PT[d.id] || 'box', id = d.id;
+  const M = col => new T.MeshLambertMaterial({color:col, emissive:col, emissiveIntensity:0.3});
+  const Box = (w,h,e) => new T.BoxGeometry(w,h,e), Cyl = (a,b,h,s) => new T.CylinderGeometry(a,b,h,s||10), Sph = r => new T.SphereGeometry(r,8,8);
+  const add = (geo,mat,x,y,z) => { const m = new T.Mesh(geo,mat); m.position.set(x,y,z); g.add(m); return m; };
+  const Wm = M(0xf4f4f0), Gm = M(0x8a9094), Km = M(0x222222), Cm = M(c);
+  if (t==='bottle'){
+    const dg = id==='doogh', body = dg ? M(0xf0f4ea) : new T.MeshLambertMaterial({color:c,transparent:true,opacity:0.8});
+    add(Cyl(0.075,0.075,0.26),body,0,0,0); add(Cyl(0.034,0.075,0.07),body,0,0.165,0);
+    add(Cyl(0.04,0.04,0.04,8),M(dg?0x2e8b57:0xdddddd),0,0.22,0);
+    add(Cyl(0.079,0.079,0.12),dg?M(0x2e8b57):Wm,0,-0.01,0);
+    if (dg) add(Cyl(0.081,0.081,0.04),Wm,0,-0.01,0);
+  } else if (t==='carton'){
+    add(Box(0.1,0.22,0.1),M(0xf2f2ee),0,0,0); add(Box(0.102,0.09,0.102),Cm,0,-0.04,0); add(Box(0.1,0.05,0.05),M(0xf2f2ee),0,0.135,0);
+  } else if (t==='cup'){
+    add(Cyl(0.07,0.055,0.1),Wm,0,0,0); add(Cyl(0.072,0.072,0.02),Cm,0,0.06,0); add(Cyl(0.062,0.062,0.03),Cm,0,0,0);
+  } else if (t==='can'){
+    add(Cyl(0.06,0.06,0.14),Cm,0,0,0); add(Cyl(0.062,0.062,0.012),Gm,0,0.075,0); add(Cyl(0.062,0.062,0.012),Gm,0,-0.075,0);
+  } else if (t==='bag'){
+    add(Box(0.2,0.28,0.06),Cm,0,0,0); add(Box(0.2,0.03,0.08),Cm,0,0.15,0); add(Box(0.2,0.03,0.08),Cm,0,-0.15,0);
+    add(Box(0.13,0.1,0.008),id==='puff'?M(0xd03a2a):Wm,0,0,0.032);
+    if (id==='puff') add(Box(0.09,0.05,0.009),Wm,0,0.01,0.033);
+  } else if (t==='tube'){
+    add(Cyl(0.03,0.03,0.2,8),Cm,0,0,0); add(Cyl(0.032,0.032,0.04,8),Wm,0,0.12,0);
+  } else if (t==='eggs'){
+    add(Box(0.2,0.05,0.1),Gm,0,-0.03,0);
+    [-0.06,0,0.06].forEach(x=>{ const e = add(Sph(0.035),M(0xe8d8b0),x,0.02,0); e.scale.set(1,1.3,1); });
+  } else if (t==='sausage'){
+    [-0.03,0.03].forEach(z=>{ const s = add(Cyl(0.03,0.03,0.24,8),Cm,0,0,z); s.rotation.z = Math.PI/2; });
+  } else if (t==='flat'){
+    add(Box(0.2,0.26,0.025),Cm,0,0,0); add(Box(0.12,0.06,0.004),Wm,0,0.04,0.014);
+  } else if (t==='pen'){ add(Cyl(0.012,0.012,0.18,6),Cm,0,0,0);
+  } else if (t==='hat'){ add(Cyl(0.13,0.13,0.02,12),Cm,0,-0.04,0); add(Cyl(0.07,0.08,0.09,12),Cm,0,0.01,0);
+  } else if (t==='umbrella'){ add(new T.ConeGeometry(0.12,0.1,10),Cm,0,0.06,0); add(Cyl(0.008,0.008,0.2,6),Km,0,-0.02,0);
+  } else if (t==='doll'){ add(Sph(0.055),M(0xe0b99c),0,0.1,0); add(new T.ConeGeometry(0.08,0.16,8),Cm,0,-0.02,0);
+  } else if (t==='plate'){ add(Cyl(0.12,0.1,0.02,12),Wm,0,0,0).rotation.x = Math.PI/2;
+  } else if (t==='ball'){ add(Sph(0.1),Cm,0,0,0);
+  } else if (t==='phones'){ add(new T.TorusGeometry(0.08,0.014,6,12,Math.PI),Km,0,0,0); add(Sph(0.035),Cm,-0.08,-0.01,0); add(Sph(0.035),Cm,0.08,-0.01,0);
+  } else if (t==='cone'){ const cn = add(new T.ConeGeometry(0.05,0.15,10),M(0xd8a860),0,-0.04,0); cn.rotation.x = Math.PI; add(Sph(0.06),Cm,0,0.07,0);
+  } else if (t==='bar'){ add(Box(0.07,0.14,0.025),Cm,0,0.03,0); add(Box(0.02,0.08,0.01),M(0xd8b878),0,-0.08,0);
+  } else if (t==='bulb'){ add(Sph(0.06),M(0xfff0a0),0,0.03,0); add(Cyl(0.03,0.03,0.05,8),Gm,0,-0.05,0);
+  } else { add(Box(0.16,0.22,0.08),Cm,0,0,0); add(Box(0.1,0.07,0.008),Wm,0,0.02,0.042); }
+  if (id==='battery') g.scale.set(0.5,0.8,0.5); else g.scale.setScalar(1.25);
+  return g;
+}
+const items = {};
+for (const d of ITEMS_DEF){
+  const g = new T.Group();
+  const rotP = d.z < -10 ? 0 : d.x > 12 ? -Math.PI/2 : ([-10,-9,-5,-3,0,3,5,10].reduce((a,b)=>Math.abs(b-d.x)<Math.abs(a-d.x)?b:a) < d.x ? Math.PI/2 : -Math.PI/2);
+  const offs = d.z < -10 ? [[0,0],[0.34,0],[-0.34,0]] : [[0,0],[0,0.34],[0,-0.34]];
+  for (const o of offs){ const pr = makeProduct(d); pr.position.set(o[0],0,o[1]); pr.rotation.y = rotP; g.add(pr); }
+  g.position.set(d.x,d.y,d.z); scene.add(g);
+  const lab = labelSprite(d.name,192,56,d.name.length>9?24:34,'#ffffff','rgba(8,10,10,.82)',0.95,0.28);
+  lab.position.set(d.x,d.y+0.55,d.z); scene.add(lab);
+  items[d.id] = {def:d, mesh:g, label:lab, taken:false};
+}
+const heldMesh = new T.Mesh(new T.BoxGeometry(0.16,0.24,0.16), new T.MeshBasicMaterial({color:0xffffff}));
+heldMesh.position.set(0.3,-0.3,-0.55); heldMesh.visible = false; camera.add(heldMesh);
+
+/* ---------- warehouse, crates, computer ---------- */
+const stock = {}, crates = {};
+const whFloor = new T.Mesh(new T.PlaneGeometry(16,24), new T.MeshLambertMaterial({color:0x6f7872})); whFloor.rotation.x = -Math.PI/2; whFloor.position.x = -22; scene.add(whFloor);
+const whCeil = new T.Mesh(new T.PlaneGeometry(16,24), new T.MeshLambertMaterial({color:0x8e9890})); whCeil.rotation.x = Math.PI/2; whCeil.position.set(-22,CEIL,0); scene.add(whCeil);
+wall(16,-22,-12,0); wall(16,-22,12,Math.PI); wall(24,-30,0,Math.PI/2);
+boxes.push({x0:-14.15,x1:-13.85,z0:-12,z1:6},{x0:-14.15,x1:-13.85,z0:9,z1:12});
+
+const whSign = labelSprite('انبار',192,56,34,'#ffe9a8','rgba(24,18,6,.9)',1.6,0.46); whSign.position.set(-13.5,2.8,7.5);
+(function(){ let i = 0;
+  for (const id in items){ const d = items[id].def, x = -27+(i%7)*1.8, z = -9+Math.floor(i/7)*4.5; i++;
+    const m = addBox(0.8,0.8,0.8,x,0.4,z,new T.MeshLambertMaterial({color:d.col}),true);
+    const lb = labelSprite(d.name,192,56,d.name.length>9?24:34,'#ffffff','rgba(8,10,10,.82)',0.95,0.28); lb.position.set(x,1.2,z); scene.add(lb);
+    m.visible = false; lb.visible = false; stock[id] = 0; crates[id] = {x:x,z:z,mesh:m,label:lb}; } })();
+const PCP = {x:-8.9, z:7.4};
+addBox(0.5,0.35,0.1,-8.9,1.35,7.3,new T.MeshBasicMaterial({color:0x2a6ab8}));
+addBox(0.15,0.2,0.15,-8.9,1.12,7.3,mDark);
+const pcLab = labelSprite('کامپیوتر',192,56,34,'#9fd0ff','rgba(6,14,26,.9)',1.0,0.3); pcLab.position.set(-8.9,1.85,7.4); scene.add(pcLab);
+
+/* ---------- lottery wheel ---------- */
+const LOT_FEE = 10000000, LOT_N = 5, LOT_PRIZE = LOT_FEE*LOT_N;
+let lotReg = [], lotWinner = null, wspin = null;
+const WH = {x:-13.15, z:8.6, y:1.7, r:0.95};
+const whC = document.createElement('canvas'); whC.width = whC.height = 512;
+const whTex = new T.CanvasTexture(whC);
+const WCOL = ['#c0392b','#2e86c1','#27ae60','#c99a0d','#8e44ad'];
+function drawWheel(){
+  const x = whC.getContext('2d'), c = 256;
+  x.clearRect(0,0,512,512);
+  for (let k=0;k<LOT_N;k++){
+    const a0 = -Math.PI/2 + k*2*Math.PI/LOT_N, a1 = a0 + 2*Math.PI/LOT_N;
+    x.beginPath(); x.moveTo(c,c); x.arc(c,c,250,a0,a1); x.closePath();
+    x.fillStyle = WCOL[k]; x.fill(); x.strokeStyle = '#ffffff'; x.lineWidth = 4; x.stroke();
+    x.save(); x.translate(c,c); x.rotate((a0+a1)/2);
+    x.fillStyle = '#ffffff'; x.font = '800 42px Vazirmatn, Tahoma, sans-serif';
+    x.textAlign = 'right'; x.textBaseline = 'middle'; x.direction = 'rtl';
+    x.fillText(lotReg[k] || '؟', 232, 2);
+    x.restore();
+  }
+  x.beginPath(); x.arc(c,c,28,0,Math.PI*2); x.fillStyle = '#20262a'; x.fill(); x.strokeStyle = '#ffffff'; x.lineWidth = 4; x.stroke();
+  whTex.needsUpdate = true;
+}
+labels.push(drawWheel);
+const wheelG = new T.Group(); wheelG.position.set(WH.x,WH.y,WH.z); wheelG.rotation.y = Math.PI/2; scene.add(wheelG);
+const wheelDisc = new T.Mesh(new T.CircleGeometry(WH.r,48), new T.MeshBasicMaterial({map:whTex,transparent:true,side:T.DoubleSide})); wheelG.add(wheelDisc);
+{ const bk = new T.Mesh(new T.CylinderGeometry(WH.r+0.06,WH.r+0.06,0.06,40), new T.MeshLambertMaterial({color:0x20262a})); bk.rotation.x = Math.PI/2; bk.position.z = -0.05; wheelG.add(bk);
+  const pt = new T.Mesh(new T.ConeGeometry(0.1,0.26,3), new T.MeshBasicMaterial({color:0xffe34a})); pt.rotation.z = Math.PI; pt.position.set(0,WH.r+0.02,0.05); wheelG.add(pt); }
+addBox(0.15,WH.y,0.15,WH.x-0.15,WH.y/2,WH.z,mDark,false);
+boxes.push({x0:-13.55,x1:-12.95,z0:WH.z-0.9,z1:WH.z+0.9});
+const whSignS = labelSprite('گردونه شانس',256,64,30,'#ffe9a8','rgba(24,18,6,.9)',2.0,0.5); whSignS.position.set(WH.x+0.2,3.0,WH.z); scene.add(whSignS);
+drawWheel();
+function lotRefreshHud(){ drawWheel(); }
+function spinWheel(){
+  if (wspin || lotWinner || lotReg.length < LOT_N) return;
+  const k = (Math.random()*LOT_N)|0, turns = 5+((Math.random()*3)|0);
+  wheelDisc.rotation.z = 0;
+  wspin = {t:0, dur:5.5, target:(k+0.5)*2*Math.PI/LOT_N - turns*2*Math.PI, k:k, state:'spin', hold:0};
+  caption('گردونه می‌چرخد...',false,5000);
+}
+function updWheel(dt){
+  if (!wspin) return;
+  const w = wspin;
+  if (w.state === 'spin'){
+    w.t += dt; const u = Math.min(1,w.t/w.dur), e = 1-Math.pow(1-u,3);
+    wheelDisc.rotation.z = w.target*e;
+    if (u >= 1){ w.state = 'hold'; w.name = lotReg[w.k]; caption('برنده‌ی قرعه‌کشی: ' + w.name + '! الان می‌آید فروشگاه.',false,7000); spawnWinner(w.name); }
+  } else {
+    w.hold += dt;
+    if (w.hold > 4){ lotReg = []; drawWheel(); wheelDisc.rotation.z = 0; wspin = null; }
+  }
+}
+function spawnWinner(name){
+  const fig = makePerson('normal', Math.random() < 0.4); fig.position.set(9,0,11.0); scene.add(fig);
+  lotWinner = {fig:fig, nick:name, x:9, z:11.0, speed:1.9, flow:new Int16Array(GNX*GNZ), flowT:0, fx:-1, fz:-1, ang:Math.PI, phase:'in', seed:rand(0,10), px:9, pz:11.0};
+}
+function updWinner(dt){
+  const w = lotWinner; if (!w) return;
+  const mv = Math.hypot(w.x-w.px,w.z-w.pz); w.px = w.x; w.pz = w.z;
+  if (w.fig.legs){ const sw = mv > 0.0005 ? Math.sin(timeNow*10)*0.6 : 0; w.fig.legs[0].rotation.x = sw; w.fig.legs[1].rotation.x = -sw; }
+  if (w.phase === 'in'){
+    if (stepCust(w,{x:-5.5,z:5.8},dt)){ w.phase = 'wait'; caption(w.nick + ' رسید. برو باهاش حرف بزن و جایزه را بده.',false,6000); }
+  } else if (w.phase === 'out'){
+    if (stepCust(w,{x:9,z:11.5},dt)){ scene.remove(w.fig); lotWinner = null; return; }
+  }
+  if (w.phase === 'wait'){ w.fig.position.set(w.x,0,w.z); w.fig.rotation.y = Math.atan2(p.x-w.x,p.z-w.z); }
+  else { w.fig.position.set(w.x,Math.abs(Math.sin(timeNow*6+w.seed))*0.03,w.z); w.fig.rotation.y = w.ang; }
+}
+function prizeTalk(){
+  const w = lotWinner; if (!w || w.phase !== 'wait') return;
+  dlgOpen = true; el.dlg.hidden = false; curNode = null; el.who.textContent = w.nick; el.choices.textContent = '';
+  el.say.textContent = 'من برنده‌ی گردونه‌ام! جایزه‌ی ' + tm(LOT_PRIZE) + 'ی من کو؟';
+  const b = document.createElement('button'); b.className = 'choice'; b.type = 'button';
+  const ok = money >= LOT_PRIZE;
+  b.textContent = ok ? 'تحویل جایزه · ' + tm(LOT_PRIZE) : 'پول کافی نداری (' + tm(money) + ')';
+  b.disabled = !ok;
+  b.onclick = ()=>{ money -= LOT_PRIZE; A.ok(); closeDlg(); w.phase = 'out'; caption(tm(LOT_PRIZE) + ' جایزه به ' + w.nick + ' رسید. تبریک!',false,5000); };
+  el.choices.appendChild(b);
+  const b2 = document.createElement('button'); b2.className = 'choice'; b2.type = 'button'; b2.textContent = 'کمی صبر کن'; b2.onclick = closeDlg; el.choices.appendChild(b2);
+}
+/* ---------- pistol on the counter (appears for the finale) ---------- */
+const GUNP = {x:-3.5, y:1.1, z:7.4};
+const gunItem = new T.Group();
+(function(){
+  const dk = new T.MeshBasicMaterial({color:0x3a4046}), dk2 = new T.MeshBasicMaterial({color:0x1c2024});
+  const sl = new T.Mesh(new T.BoxGeometry(0.1,0.1,0.42),dk); gunItem.add(sl);
+  const gr = new T.Mesh(new T.BoxGeometry(0.08,0.2,0.1),dk2); gr.position.set(0,-0.14,0.14); gr.rotation.x = 0.25; gunItem.add(gr);
+  const br = new T.Mesh(new T.BoxGeometry(0.05,0.05,0.2),dk2); br.position.set(0,0.0,-0.3); gunItem.add(br);
+  gunItem.position.set(GUNP.x,GUNP.y,GUNP.z); gunItem.rotation.y = 0.5; gunItem.visible = false; scene.add(gunItem);
+})();
+const gunLabel = labelSprite('کلت',192,56,36,'#ffcf5a','rgba(24,16,4,.9)',1.0,0.3);
+gunLabel.position.set(GUNP.x,GUNP.y+0.6,GUNP.z); gunLabel.visible = false; scene.add(gunLabel);
+const gunLight = new T.PointLight(0xffc860,0,6); gunLight.position.set(GUNP.x,GUNP.y+0.7,GUNP.z); scene.add(gunLight);
+
+/* ---------- pistol in hand ---------- */
+const gunM = new T.Group();
+(function(){
+  const a = new T.MeshLambertMaterial({color:0x2a2e33}), b = new T.MeshLambertMaterial({color:0x14171a});
+  const m1 = new T.Mesh(new T.BoxGeometry(0.07,0.08,0.34),a); gunM.add(m1);
+  const m2 = new T.Mesh(new T.BoxGeometry(0.05,0.13,0.07),b); m2.position.set(0,-0.1,0.1); m2.rotation.x = 0.25; gunM.add(m2);
+  const m3 = new T.Mesh(new T.BoxGeometry(0.03,0.03,0.14),b); m3.position.set(0,0.0,-0.22); gunM.add(m3);
+})();
+gunM.position.set(0.26,-0.24,-0.5); gunM.visible = false; camera.add(gunM);
+const flashM = new T.Mesh(new T.PlaneGeometry(0.24,0.24), new T.MeshBasicMaterial({color:0xffd070,transparent:true,opacity:0.95,depthWrite:false,side:T.DoubleSide,fog:false}));
+flashM.position.set(0,0,-0.36); flashM.visible = false; gunM.add(flashM);
+const muzzleLight = new T.PointLight(0xffb050,0,6); muzzleLight.position.set(0.2,-0.1,-0.8); camera.add(muzzleLight);
+
+/* ---------- people ---------- */
+const SKIN = [0xc8a285,0xb88a6a,0x8d6446,0xe0b99c,0x6f4a35];
+const COAT = [0x3b4a5c,0x5a3c36,0x2f4a3a,0x4a4a4e,0x6b5a3a,0x7a2f2f];
+function mkMesh(geo,mat,x,y,z,parent){ const m = new T.Mesh(geo,mat); m.position.set(x,y,z); parent.add(m); return m; }
+function makePerson(type,fem){
+  const g = new T.Group();
+  const skin = new T.MeshLambertMaterial({color:pick(SKIN)});
+  const coat = new T.MeshLambertMaterial({color:fem?pick([0x7a3a5a,0x4a3b6b,0x2f5a6a]):pick(COAT)});
+  const dark = new T.MeshLambertMaterial({color:0x0a0a0a});
+  const white = new T.MeshLambertMaterial({color:0xf2f2ee,emissive:0x151515});
+  const hairM = new T.MeshLambertMaterial({color:pick([0x15110f,0x2a1d14,0x3b3b3b,0x0b0b0b])});
+  const pm = new T.MeshLambertMaterial({color:0x22252b}), shoeM = new T.MeshLambertMaterial({color:0x111111});
+  g.legs = [];
+  for (const s of [-1,1]){ const lg = new T.Group(); lg.position.set(s*0.11,0.5,0); g.add(lg); mkMesh(new T.BoxGeometry(0.15,0.46,0.17),pm,0,-0.25,0,lg); mkMesh(new T.BoxGeometry(0.16,0.07,0.28),shoeM,0,-0.465,0.05,lg); g.legs.push(lg); }
+  mkMesh(new T.CylinderGeometry(0.27,0.33,0.95,10), coat, 0,0.95,0,g);
+  mkMesh(new T.CylinderGeometry(0.07,0.08,0.14,8), skin, 0,1.5,0,g);
+  for (const s of [-1,1]){
+    const arm = mkMesh(new T.BoxGeometry(0.09,0.62,0.09), coat, s*0.4,1.0,0,g); arm.rotation.z = s*0.07;
+    mkMesh(new T.BoxGeometry(0.09,0.11,0.07), skin, s*0.43,0.65,0,g);
+  }
+  const head = new T.Group(); head.position.y = 1.65; g.add(head);
+  mkMesh(new T.SphereGeometry(0.22,12,10), skin, 0,0,0,head);
+  mkMesh(new T.SphereGeometry(0.232,12,8,0,Math.PI*2,0,Math.PI*0.42), hairM, 0,0.005,0,head);
+  mkMesh(new T.SphereGeometry(0.228,12,10,Math.PI,Math.PI,0,Math.PI), hairM, 0,0,0,head);
+  const eye = (x,y)=>{
+    const zc = Math.sqrt(Math.max(0.0484-x*x-y*y,0.002));
+    mkMesh(new T.SphereGeometry(0.04,8,6), white, x,y,zc-0.02,head);
+    mkMesh(new T.SphereGeometry(0.022,8,6), dark, x,y,zc+0.012,head);
+  };
+  if (type !== 'noface'){
+    eye(-0.075,0.02); eye(0.075,0.02);
+    mkMesh(new T.BoxGeometry(0.03,0.05,0.04), skin, 0,-0.03,0.212,head);
+    mkMesh(new T.BoxGeometry(0.1,0.014,0.02), dark, 0,-0.1,0.193,head);
+  }
+  if (type === 'many'){ eye(-0.13,0.1); eye(0.13,0.1); eye(0,0.14); }
+  if (fem){ mkMesh(new T.BoxGeometry(0.48,0.75,0.2), hairM, 0,-0.32,-0.1,head); mkMesh(new T.BoxGeometry(0.1,0.32,0.14), hairM, -0.21,-0.1,0.04,head); mkMesh(new T.BoxGeometry(0.1,0.32,0.14), hairM, 0.21,-0.1,0.04,head); }
+  if (type === 'tilt'){ head.rotation.z = 1.0; head.position.x = -0.05; }
+  if (type === 'backwards'){ head.rotation.y = Math.PI; }
+  g.userData = {head:head,type:type};
+  return g;
+}
+function makeManager(){
+  const g = new T.Group();
+  const suit = new T.MeshLambertMaterial({color:0x0b0c0e});
+  const maskM = new T.MeshBasicMaterial({color:0xe9e6dc});
+  const blk = new T.MeshBasicMaterial({color:0x000000});
+  mkMesh(new T.CylinderGeometry(0.16,0.14,0.9,8), suit, 0,0.45,0,g);
+  mkMesh(new T.CylinderGeometry(0.26,0.3,1.1,10), suit, 0,1.45,0,g);
+  for (const s of [-1,1]){
+    const arm = mkMesh(new T.BoxGeometry(0.07,1.5,0.07), suit, s*0.36,1.15,0,g); arm.rotation.z = s*0.05;
+    mkMesh(new T.BoxGeometry(0.07,0.22,0.05), maskM, s*0.38,0.34,0,g);
+  }
+  mkMesh(new T.CylinderGeometry(0.06,0.07,0.2,8), suit, 0,2.08,0,g);
+  const head = new T.Group(); head.position.y = 2.3; g.add(head);
+  const m = mkMesh(new T.SphereGeometry(0.21,12,10), maskM, 0,0,0,head); m.scale.set(0.9,1.2,0.95);
+  for (const s of [-1,1]){ const e = mkMesh(new T.SphereGeometry(0.035,8,6), blk, s*0.075,0.05,0.185,head); e.scale.set(1,1.8,0.5); }
+  const mouth = mkMesh(new T.BoxGeometry(0.16,0.012,0.02), blk, 0,-0.1,0.19,head);
+  mouth.rotation.z = 0.0;
+  g.userData = {head:head};
+  return g;
+}
+const manager = makeManager(); manager.visible = false; scene.add(manager);
+
+/* killers: dark clothes, a knife, rush at you */
+function makeKiller(kind){
+  const g = new T.Group(), mats = [];
+  const L = c => { const m = new T.MeshLambertMaterial({color:c}); mats.push(m); return m; };
+  const pants = L(0x101215), cloth = L(kind ? 0x1d2026 : 0x2a231d), head0 = L(kind ? 0x1a1a1c : 0x0e0f11), glove = L(0x0b0b0b);
+  mkMesh(new T.CylinderGeometry(0.2,0.17,0.5,8), pants, 0,0.25,0,g);
+  mkMesh(new T.CylinderGeometry(0.28,0.34,0.95,10), cloth, 0,0.95,0,g);
+  const aL = mkMesh(new T.BoxGeometry(0.1,0.62,0.1), cloth, -0.4,1.0,0,g); aL.rotation.z = -0.1;
+  const aR = mkMesh(new T.BoxGeometry(0.1,0.6,0.1), cloth, 0.38,1.2,0.22,g); aR.rotation.x = -1.25;
+  mkMesh(new T.BoxGeometry(0.1,0.1,0.1), glove, -0.43,0.66,0,g);
+  mkMesh(new T.BoxGeometry(0.1,0.1,0.1), glove, 0.38,1.34,0.5,g);
+  mkMesh(new T.BoxGeometry(0.035,0.05,0.4), new T.MeshBasicMaterial({color:0xcfd6dc}), 0.38,1.34,0.78,g);
+  const head = new T.Group(); head.position.y = 1.65; g.add(head);
+  const hs = mkMesh(new T.SphereGeometry(0.235,12,10), head0, 0,0,0,head); hs.scale.set(1,1.05,1);
+  if (kind){
+    mkMesh(new T.BoxGeometry(0.2,0.035,0.02), new T.MeshBasicMaterial({color:0xf2f2ee}), 0,0.03,0.225,head);
+  } else {
+    const red = new T.MeshBasicMaterial({color:0xff2a1a});
+    for (const s of [-1,1]){ const e = mkMesh(new T.SphereGeometry(0.03,8,6), red, s*0.08,0.03,0.215,head); e.scale.set(1.3,0.7,0.5); }
+  }
+  g.userData = {mats:mats, head:head};
+  return g;
+}
+
+// jumpscare face (parented to camera)
+const scream = new T.Group();
+(function(){
+  const maskM = new T.MeshBasicMaterial({color:0xece8dc}), blk = new T.MeshBasicMaterial({color:0x000000}), tm = new T.MeshBasicMaterial({color:0xd8d2c0});
+  const h = mkMesh(new T.SphereGeometry(0.34,14,12), maskM, 0,0,0,scream); h.scale.set(0.9,1.25,0.9);
+  for (const s of [-1,1]){ const e = mkMesh(new T.SphereGeometry(0.06,8,6), blk, s*0.12,0.1,0.28,scream); e.scale.set(1,1.8,0.5); }
+  const jaw = mkMesh(new T.SphereGeometry(0.16,12,10), blk, 0,-0.18,0.26,scream); jaw.scale.set(1.1,1.7,0.5);
+  for (let i=0;i<9;i++){
+    const x = -0.12+i*0.03;
+    mkMesh(new T.BoxGeometry(0.02,0.05,0.02), tm, x,-0.04,0.3,scream);
+    mkMesh(new T.BoxGeometry(0.02,0.05,0.02), tm, x,-0.34,0.28,scream);
+  }
+  scream.position.set(0,0,-0.9); scream.visible = false; camera.add(scream);
+})();
+const jumpLight = new T.PointLight(0xffe0d0,0,4); jumpLight.position.set(0,0.2,0); camera.add(jumpLight);
+
+/* ---------- dialogue data ---------- */
+const CUST = [
+  {name:'خانم رضایی', fem:true, type:'normal', spot:[-8,9.2], item:'milk',
+   intro:'سلام! کارمند جدیدی؟',
+   replies:['بله، امشب اولین شبمه','نه، چند وقتیه اینجام','شما چی لازم دارید؟'],
+   ask:'خوبه. میشه برام یه شیر بیاری؟',
+   where:'ته فروشگاه، بخش لبنیات. همون یخچال‌های بزرگ.',
+   story:[
+    ['ممنون. راستی، کارمند قبلی هم همینقدر مودب بود.','کارمند قبلی؟'],
+    ['مهران. شیفت شب. سه ماه پیش پیداش کردن... همین‌جا، توی همین فروشگاه.','چی؟ مرده بود؟'],
+    ['توی سردخانه‌ی پشت بخش لبنیات. در از بیرون قفل بوده.','یعنی کسی قفلش کرده؟'],
+    ['پلیس گفت حادثه بوده. ولی سردخانه از داخل دستگیره نداره. برو، مشتری‌های دیگه هم هستند.','باشه']]},
+  {name:'آقای حسینی', type:'normal', spot:[7.5,-3], item:'bread',
+   intro:'ببخشید. شما همونی هستی که از دیروز اینجایی؟',
+   replies:['آره، همینجام','نه، امشب شروع کردم','چرا می‌پرسید؟'],
+   ask:'مهم نیست. یه نون تازه می‌خوام.',
+   where:'قفسه‌ی نان و شیرینی. سمت راست قفسه، دم دست.',
+   story:[
+    ['نون‌ها گرمه. ولی امروز هیچ نونی نپخته‌اند.','یعنی چی؟'],
+    ['مهران همیشه ساعت سه نون تازه می‌چید. می‌گفت بوی نون از تنهایی کم می‌کنه.','شما می‌شناختینش؟'],
+    ['همسایه‌ش بودم. شب آخر بیرون اومد و گفت مدیر یه چیزی توی انبار قایم کرده. برگشت تو و دیگه ندیدمش.','مدیر چی قایم کرده بود؟'],
+    ['نمی‌دونم. ولی مدیر هم از اون شب دیگه نیومد. می‌گن خودش هم همون شب مرد.','مدیر هم؟'],
+    ['حواست باشه. می‌گن هنوز بین قفسه‌ها قدم می‌زنه. اگه دیدیش، نگاهش رو ازش برنگیر.','باشه، باشه']]},
+  {name:'پیرمرد نگهبان', type:'tilt', spot:[-2.5,-8.5], item:'battery',
+   intro:'چراغا همیشه اینجوری چشمک می‌زنن؟',
+   replies:['گاهی','نه، اینجوری نبود','نمی‌دونم'],
+   ask:'ولش کن. یه باتری بیار برام. چراغ قوه‌م خاموش شده.',
+   where:'طبقه بالا. پله‌ها ته فروشگاه سمت راست است. قفسه لوازم خانگی، سمت چپ.',
+   story:[
+    ['ممنون پسرم. چراغا از اون شب اینجوری شدن.','کدوم شب؟'],
+    ['شبی که مهران مرد. من نگهبان قبلی بودم. دیدم مدیر با یه جعبه رفت سمت سردخانه.','جعبه؟'],
+    ['جعبه‌ی فروش سه ماه. مهران فهمیده بود مدیر پول فروشگاه رو برمی‌داره. مدیر هم در سردخانه رو...','قفلش کرد؟'],
+    ['آره. فردا صبح گفت مهران خودش رفته تو و در بسته شده. هیچکس باور نکرد، ولی هیچکس هم حرفی نزد.','چرا؟'],
+    ['ترسیدیم. حالا ترس به سراغ ما اومده. از شب اول تا امشب، هیچ کارمندی بیشتر از یه هفته دوام نیاورده.','وای']]},
+  {name:'خواهر مهران', fem:true, type:'backwards', spot:[2.5,-4], item:'notebook',
+   intro:'تو جای اون وایستادی.',
+   replies:['جای کی؟','می‌دونم','شما کی هستید؟'],
+   ask:'مهم نیست. فقط برام یه دفتر بیار. مهران همیشه برام می‌آورد.', _x:'تخم‌مرغ بیار. مهران همیشه برام می‌آورد.',
+   where:'طبقه بالا، قفسه لوازم تحریر. پله‌ها ته فروشگاه سمت راست است.', _y:'سمت چپ، دور از شیر.',
+   story:[
+    ['ممنون. من خواهر مهرانم.','متأسفم'],
+    ['هر شب میام اینجا. چون جسدش رو من پیدا کردم. روی در سردخانه خراش بود. ناخن‌هاش...','وای...'],
+    ['پلیس پرونده رو بست. ولی مدیر قبلش کلید رو گذاشته بود توی جیب مهران. می‌خواست صحنه رو درست کنه.','پس همه‌چی ساختگی بود'],
+    ['آره. آخرین مشتری ته فروشگاه منتظره. اون همه‌چی رو می‌دونه. ازش بپرس.','باشه، میرم']]},
+  {name:'؟؟؟', type:'noface', spot:[0,-9.2], item:'tea',
+   intro:'خسته‌ای.',
+   replies:['آره','شما کی هستید؟','تو دیگه کی هستی؟'],
+   ask:'یه چای می‌خوام. همونی که همیشه برام می‌ذاشتی.',
+   where:'قفسه‌ی چای و برنج، سمت چپ قفسه.',
+   story:[
+    ['ممنون. بالاخره یکی گوش داد.','تو... مهرانی؟'],
+    ['سه ماه اینجا موندم. هر شب یه کارمند میاد و ازش می‌خوام یه کاری برام بکنه، تا کسی بفهمه چی شد.','و من فهمیدم'],
+    ['همه‌چی رو فهمیدی. مدیر اینجا مرد، جلوی همون سردخانه. از ترس، یا از عذاب. و حالا رفته.','پس دیگه برنمی‌گرده؟'],
+    ['ولی دو نفر دیگه هستند که از این راز می‌ترسن. دارن میان. کلت پشت صندوقه. حواست باشه.','کلت؟ کی میاد؟']]}
+];
+const FUN = [
+ {intro:'سلام! کارمند جدیدی؟ خوش آمدی به فروشگاه عجیب‌ها!', ask:'میشه یه شیر برام بیاری؟ گاوم قهر کرده.', story:[['ممنون! گاوم از دیشب با من حرف نمی‌زند.','وای نه!'],['می‌گوید قیمت علوفه را خودم بالا بردم.','حق با اوست؟'],['نه! من فقط شیر می‌خواهم. خداحافظ.','بای']]},
+ {intro:'ببخشید، این نان‌ها عادی‌اند یا از آن‌هایی که می‌دوند؟', ask:'یه نان تازه می‌خوام. ولی شبیه کفش نباشد.', story:[['ای جان! دقیقاً شکل نان است.','خدا را شکر'],['دفعه‌ی قبل یک نان گرفتم، معلوم شد کوسن بوده.','چه بد'],['الان ناراحت نیستم. فقط یک کم گرسنه‌ام.','نوش جان']]},
+ {intro:'چراغ‌ها دارن مهمانی می‌گیرن، نه؟', ask:'ولش کن. یه باتری بیار برام. چراغ قوه خاموش شده.', story:[['ممنون پسرم. حالا چراغ قوه‌ام روشن می‌شود.','عالی'],['راستش چراغ قوه ندارم. این را می‌خواهم بخورم.','نخور!'],['شوخی کردم! ولی نصفش جدی بود.','باشه، فرار کنم']]},
+ {intro:'سلام! کارمند جدید؟ مثل این‌که خیلی بامزه‌ای.', ask:'فقط یه دفتر بیار. می‌خوام شکایت‌نامه بنویسم.', story:[['ممنون. شکایتم از شیرهاست.','از شیرها؟'],['همه‌شان تاریخ انقضا دارند و هیچ‌کدام عذرخواهی نکردند.','حق دارید'],['خودکار هم خودم دارم. خداحافظ.','بای']]},
+ {intro:'خسته‌ای؟ منم. بیا چای بخوریم!', ask:'یه چای می‌خوام. همونی که قهر بود.', story:[['ممنون! چای عالی است.','نوش جان'],['می‌دانی چرا چای گرم است؟ چون سردش می‌کنیم.','ها؟'],['بین خودمان بماند. من اصلاً چای نمی‌خورم.','پس چرا؟!']]}
+];
+CUST.forEach((c,i)=>Object.assign(c,FUN[i],{replies:['سلام!','چه خبر؟','شما چی لازم دارید؟']}));
+CUST.push(
+ {name:'آقای جورابی',type:'normal',spot:[-12,2],item:'socks',intro:'سلام! جوراب‌هام از دست من فرار کردند.',replies:['سلام!','چه خبر؟','شما چی لازم دارید؟'],ask:'یه جفت جوراب می‌خوام. فقط لنگه‌ش را گم نکن.',where:'طبقه بالا، قفسه پوشاک، سمت چپ. پله‌ها ته فروشگاه سمت راست است.',story:[['ممنون! لنگه‌هایش رنگ‌های متفاوت است. مد است.','باحاله'],['من همیشه فقط یکی از لنگه‌ها را پیدا می‌کنم.','سخت است'],['خداحافظ. لنگه‌ی دیگرم را دیدی بگو.','باشه']]},
+ {name:'خانم هدفونی',fem:true,type:'normal',spot:[6,8],item:'headphones',intro:'سلام! صدایم می‌آید؟ نه نه، من صدای تو را نمی‌شنوم.',replies:['سلام!','چه خبر؟','شما چی لازم دارید؟'],ask:'یه هدفون می‌خوام. برای شنیدن حرف‌های خودم!',where:'طبقه بالا، قفسه دیجیتال، سمت چپ.',story:[['ممنون! حالا می‌توانم با خودم حرف بزنم.','خوب است'],['دیشب با خودم بحث کردم و باختم.','وای!'],['خداحافظ. نه، خودم را نه، تو را گفتم.','بای']]}
+);
+function getNode(c,id){
+  const it = items[c.item].def.name;
+  if (id.indexOf('story:') === 0){
+    const i = +id.slice(6), pg = c.story[i];
+    return {t:pg[0], c:[[pg[1], i+1 < c.story.length ? 'story:'+(i+1) : 'finish']]};
+  }
+  switch(id){
+    case 'intro': return {t:c.intro, c:c.replies.map(r=>[r,'ask'])};
+    case 'ask': return {t:c.ask, c:[['باشه، الان میارم','accept'],[it+' کجاست؟','where'],['الان نمی‌تونم','decline']]};
+    case 'where': return {t:c.where, c:[['باشه، میرم میارم','accept'],['بعداً','decline']]};
+    case 'accept': return {t:'ممنون. همین‌جا منتظرم.', c:[['برم','accept_close']]};
+    case 'decline': return {t:'باشه... اگه نظرت عوض شد، همین‌جام.', c:[['باشه','close']]};
+    case 'again': return {t:'هنوز '+it+' رو نیاوردی.', c:[['الان میارم','close'],[it+' کجاست؟','where']]};
+    case 'give': return {t:'آوردی؟', c:[['بفرمایید','story:0'],['هنوز نه','close']]};
+    case 'wrong': return {t:'این که '+items[held].def.name+'ه. من '+it+' خواستم.', c:[['ببخشید، الان میارم','close']]};
+  }
+  return {t:'...', c:[['برو','close']]};
+}
+
+/* ---------- audio ---------- */
+const A = {
+  ctx:null, master:null, nbuf:null, stat:null, hum:null,
+  init(){
+    if (this.ctx){ if (this.ctx.state==='suspended') this.ctx.resume(); return; }
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      const c = this.ctx = new AC();
+      this.master = c.createGain(); this.master.gain.value = 0.8; this.master.connect(c.destination);
+      const len = c.sampleRate*2; this.nbuf = c.createBuffer(1,len,c.sampleRate);
+      const d = this.nbuf.getChannelData(0); for (let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      const f = c.createBiquadFilter(); f.type='lowpass'; f.frequency.value = 180;
+      const g = c.createGain(); g.gain.value = 0.045; f.connect(g); g.connect(this.master);
+      for (const fr of [50,50.7,100.2]){ const o = c.createOscillator(); o.type='sawtooth'; o.frequency.value = fr; o.connect(f); o.start(); }
+      this.hum = g;
+      const s = c.createBufferSource(); s.buffer = this.nbuf; s.loop = true;
+      const sf = c.createBiquadFilter(); sf.type='bandpass'; sf.frequency.value = 1800; sf.Q.value = 0.6;
+      this.stat = c.createGain(); this.stat.gain.value = 0;
+      s.connect(sf); sf.connect(this.stat); this.stat.connect(this.master); s.start();
+    }catch(e){ this.ctx = null; }
+  },
+  tone(f1,f2,dur,type,vol,delay,pan){
+    if (!this.ctx) return; const c = this.ctx, t = c.currentTime + (delay||0);
+    const o = c.createOscillator(), g = c.createGain(); o.type = type;
+    o.frequency.setValueAtTime(f1,t); if (f2 !== f1) o.frequency.exponentialRampToValueAtTime(Math.max(1,f2),t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); this.out(g,pan); o.start(t); o.stop(t+dur+0.05);
+  },
+  out(node,pan){
+    const c = this.ctx;
+    if (pan && c.createStereoPanner){ const p = c.createStereoPanner(); p.pan.value = pan; node.connect(p); p.connect(this.master); } else node.connect(this.master);
+  },
+  noise(dur,vol,ftype,freq,delay,pan){
+    if (!this.ctx) return; const c = this.ctx, t = c.currentTime + (delay||0);
+    const s = c.createBufferSource(); s.buffer = this.nbuf;
+    const f = c.createBiquadFilter(); f.type = ftype; f.frequency.value = freq;
+    const g = c.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f); f.connect(g); this.out(g,pan); s.start(t); s.stop(t+dur+0.05);
+  },
+  step(){ this.noise(0.08,0.05,'lowpass',500); },
+  pa(){ this.tone(880,880,0.25,'sine',0.12); this.tone(660,660,0.4,'sine',0.12,0.3); },
+  chime(){ this.tone(1320,1320,0.4,'sine',0.1); this.tone(990,990,0.6,'sine',0.09,0.14); },
+  pick(){ this.tone(500,800,0.1,'square',0.05); },
+  ok(){ this.tone(660,660,0.1,'sine',0.1); this.tone(990,990,0.22,'sine',0.1,0.1); },
+  click(){ this.tone(300,300,0.04,'square',0.04); },
+  buzz(){ this.noise(0.2,0.07,'bandpass',2500); },
+  beat(vol){ this.tone(70,38,0.18,'sine',vol); this.tone(60,34,0.2,'sine',vol*0.8,0.2); },
+  jump(){ this.noise(1.4,0.8,'highpass',500); this.tone(90,500,1.0,'sawtooth',0.4); this.tone(133,700,1.0,'sawtooth',0.3); this.tone(45,45,1.6,'sine',0.6); },
+  unlock(){ [392,523,659,784].forEach((f,i)=>this.tone(f,f,0.4,'sine',0.11,i*0.15)); },
+  win(){ [523,659,784,1047].forEach((f,i)=>this.tone(f,f,0.5,'sine',0.12,i*0.18)); },
+  thump(){ const p = rand(-0.9,0.9); this.noise(rand(0.3,0.5),0.12,'lowpass',200,0,p); this.tone(60,35,0.4,'sine',0.14,0,p); },
+  gun(){ this.noise(0.22,0.55,'bandpass',1300); this.noise(0.1,0.4,'highpass',3000); this.tone(170,45,0.16,'square',0.22); },
+  gunFar(pan,vol){ this.noise(0.2,0.35*vol,'bandpass',900,0,pan); this.tone(140,40,0.15,'square',0.14*vol,0,pan); },
+  hitm(){ this.tone(1100,700,0.06,'square',0.07); },
+  hurt(){ this.noise(0.25,0.25,'lowpass',700); this.tone(130,60,0.25,'sawtooth',0.18); },
+  swing(){ this.noise(0.12,0.12,'highpass',2200); },
+  kdie(){ this.tone(220,50,0.6,'sawtooth',0.2); this.noise(0.5,0.15,'lowpass',400); },
+  reload(){ this.tone(240,240,0.05,'square',0.06); this.tone(360,360,0.05,'square',0.06,0.45); this.tone(300,300,0.05,'square',0.06,0.9); },
+  alarm(){ for (let i=0;i<4;i++){ this.tone(700,950,0.4,'sawtooth',0.1,i*0.5); } },
+  siren(){ for (let i=0;i<8;i++){ this.tone(650,900,0.5,'sine',0.1,i*0.55); this.tone(900,650,0.5,'sine',0.1,i*0.55+0.28); } }
+};
+
+/* ---------- state ---------- */
+let state = 'menu';             // menu | lobby | play | dying | over
+let gt = 0, timeNow = 0;
+const p = {x:0,z:9.5,yaw:0,pitch:0,phase:0,y:0,lv:0};
+let ci = 0, cust = null, spawnAt = 4, delivered = 0, held = null, allDone = false;
+let dlgOpen = false, curNode = null;
+const mgr = {active:false, x:0, z:0, tx:0, tz:0, stuck:0, seenOnce:false, beatT:0, hintShown:false, t:0, freeze:0};
+const MGR_TIME = 60;
+let lightLevel = 1, flickerT = 0, ambNext = 10, doorMsgT = 0, paIdx = 0, dyingT = 0, redT = 0;
+// combat
+let hp = 100, hpHurtAt = -99, invuln = 0, downT = 0;
+let hasGun = false, ammo = 12, reloadT = 0, nextShot = 0, shotCount = 0, recoil = 0, flashT = 0, firing = false, hitSeq = 0;
+const myHits = [];
+let fightOn = false, finaleT = 0, killersSpawned = false, killedCount = 0;
+let frzOn = false, frzDone = false, frzT = 0, policeT = -1;
+const killers = [];
+const leaving = [];
+const tracers = [];
+const MAG = 12;
+const PA = [
+  [25,'اطلاعیه: مشتریان گرامی، فروشگاه تا پایان شب باز است.'],
+  [90,'اطلاعیه: لطفاً از راهروی چهارم دور شوید.'],
+  [160,'کارمند جدید، لطفاً به پشت سرت نگاه نکن.'],
+  [200,'مهران، لطفاً به سردخانه مراجعه کنید.'],
+  [260,'فروشگاه هرگز تعطیل نمی‌شود.']
+];
+PA.length = 0;
+PA.push([0,'اطلاعیه: قیمت نان امشب کمی خنده‌دار است.'],[0,'اطلاعیه: صاحب ماشین قرمز، ماشینتان جلوی در رقصیدن را شروع کرد.'],[0,'اطلاعیه: یک کارمند گم شده؛ اگر پیدایش کردید برایش شیر بیاورید.'],[0,'اطلاعیه: لطفاً چیپس‌ها را نترسانید.'],[0,'اطلاعیه: امشب هرکس خندید، یک شکلات جایزه دارد.']);
+PA.length = 0;
+PA.push([0,'اطلاعیه: مشتریان گرامی، سبد خرید را به مشتری تحویل بدهید.'],[0,'اطلاعیه: لوازم خانگی و پوشاک در طبقه‌ی بالا موجود است.'],[0,'اطلاعیه: موجودی کالاها را از کامپیوتر کنار صندوق بررسی کنید.']);
+const el = {
+  obj:$('objText'), arrow:$('arrow'), held:$('heldName'), ammo:$('ammo'), cross:$('cross'), caption:$('caption'),
+  act:$('act'), fire:$('fireBtn'), dlg:$('dlg'), who:$('who'), say:$('say'), choices:$('choices'), danger:$('danger'), flash:$('flash'), hurtFx:$('hurtFx'),
+  hpbar:$('hpbar'), hpfill:$('hpfill'), netChip:$('netChip'),
+  menu:$('menu'), lobby:$('lobby'), end:$('end'), endTitle:$('endTitle'), endText:$('endText'), endStats:$('endStats')
+};
+let capT = null, mkT = null;
+function caption(txt,pa,ms){
+  el.caption.textContent = txt; el.caption.classList.toggle('pa',!!pa); el.caption.classList.add('on');
+  clearTimeout(capT); capT = setTimeout(()=>el.caption.classList.remove('on'), ms||4500);
+}
+
+/* ---------- online (group rooms) ---------- */
+const NET = {
+  mode:'solo',            // solo | host | guest
+  apiP:null, room:null, code:'', name:'', sid:0, running:false, res:0,
+  pend:{}, rem:{}, me:null, lastAt:0, atSeq:0, atList:[], lastHit:{}, ms:0,
+  hostSeenAt:0, joinedAt:0, unsub:null
+};
+function cleanName(s){
+  s = String(s==null?'':s).replace(/[\u0000-\u001f\u007f​‎‏‪-‮⁦-⁩﻿]/g,'').trim().slice(0,14);
+  return s || 'بازیکن';
+}
+function makeRoom(code,asHost){
+  return new Promise((resolve,reject)=>{
+    if (typeof Peer === 'undefined'){ reject({code:'no_lib'}); return; }
+    const hostId = 'hnshab-'+code.toLowerCase();
+    const R = {handlers:[], table:{}, conns:{}, myId:null, hostConn:null, closed:false, dirty:true, cache:[], timer:null, out:{}, peer:null};
+    let done = false, peer = null, to = null;
+    const fail = e=>{ if (done) return; done = true; clearTimeout(to); try{ peer.destroy(); }catch(x){} reject(e); };
+    const rebuild = ()=>{ R.dirty = true; };
+    const notify = ()=>{ const arr = api.peers(); for (const h of R.handlers.slice()){ try{ h({peers:arr,joined:[],left:[],updated:[]}); }catch(x){} } };
+    const merge = (id,patch)=>{
+      const cur = R.table[id] || (R.table[id] = {});
+      for (const k in patch){ if (patch[k]===null) delete cur[k]; else cur[k] = patch[k]; }
+      rebuild();
+    };
+    const api = {
+      peers(){
+        if (R.dirty){
+          R.cache = Object.keys(R.table).map(id=>({peer:id,by:null,isMe:id===R.myId,sameTab:id===R.myId,kind:'viewer',guest:false,presence:R.table[id],updatedAt:0}));
+          R.dirty = false;
+        }
+        return R.cache;
+      },
+      presence(patch){
+        if (R.closed || !R.myId) return Promise.resolve();
+        merge(R.myId,patch);
+        if (!asHost){
+          for (const k in patch) R.out[k] = patch[k];
+          if (R.hostConn && R.hostConn.open){ try{ R.hostConn.send({t:'p',p:R.out}); R.out = {}; }catch(x){} }
+        }
+        return Promise.resolve();
+      },
+      onPeers(h){
+        R.handlers.push(h);
+        Promise.resolve().then(()=>{ if (!R.closed) { try{ h({peers:api.peers(),joined:api.peers(),left:[],updated:[]}); }catch(x){} } });
+        return ()=>{ const i = R.handlers.indexOf(h); if (i>=0) R.handlers.splice(i,1); };
+      },
+      connected(){ return !R.closed; },
+      leave(){
+        R.closed = true; clearInterval(R.timer);
+        try{ peer.destroy(); }catch(x){}
+        return Promise.resolve();
+      }
+    };
+    const ready = ()=>{ if (done) return; done = true; clearTimeout(to); resolve(api); };
+    try{ peer = asHost ? new Peer(hostId) : new Peer(); }catch(e){ reject({code:'upstream_error'}); return; }
+    R.peer = peer;
+    to = setTimeout(()=>fail({code:'upstream_error'}), 15000);
+    peer.on('error', err=>{
+      const t = err && err.type;
+      if (!done){
+        if (t==='unavailable-id') fail({code:'taken'});
+        else if (t==='peer-unavailable') fail({code:'not_found'});
+        else fail({code:'upstream_error'});
+      }
+    });
+    if (asHost){
+      peer.on('open', id=>{
+        R.myId = id; R.table[id] = {}; rebuild(); ready();
+        R.timer = setInterval(()=>{
+          const snap = {t:'s',p:R.table};
+          for (const cid in R.conns){ const c = R.conns[cid]; if (c.open){ try{ c.send(snap); }catch(x){} } }
+          notify();
+        },100);
+      });
+      peer.on('connection', conn=>{
+        conn.on('open', ()=>{ R.conns[conn.peer] = conn; if (!R.table[conn.peer]) R.table[conn.peer] = {}; rebuild(); notify(); });
+        conn.on('data', d=>{ if (d && d.t==='p' && d.p) merge(conn.peer,d.p); });
+        conn.on('close', ()=>{ delete R.conns[conn.peer]; delete R.table[conn.peer]; rebuild(); notify(); });
+        conn.on('error', ()=>{});
+      });
+    } else {
+      peer.on('open', id=>{
+        R.myId = id; R.table[id] = {}; rebuild();
+        const conn = peer.connect(hostId,{reliable:true}); R.hostConn = conn;
+        conn.on('open', ()=>{
+          ready();
+          R.timer = setInterval(()=>{ if (R.out && Object.keys(R.out).length && conn.open){ try{ conn.send({t:'p',p:R.out}); R.out = {}; }catch(x){} } },150);
+        });
+        conn.on('data', d=>{
+          if (d && d.t==='s' && d.p){
+            const mine = R.table[R.myId] || {};
+            R.table = d.p; R.table[R.myId] = mine; rebuild(); notify();
+          }
+        });
+        conn.on('close', ()=>{ const mine = R.table[R.myId] || {}; R.table = {}; R.table[R.myId] = mine; rebuild(); notify(); });
+        conn.on('error', ()=>{});
+      });
+    }
+  });
+}
+function netApi(){
+  const no = {join:()=>Promise.reject({code:'no_room'})};
+  try{ return claude.use('room').then(r=> r ? {join:code=>r.join('hnshab-'+code.toLowerCase())} : no, ()=>no); }
+  catch(e){ return Promise.resolve(no); }
+}
+function viewersOf(arr){ return (arr||[]).filter(q=>q && q.kind==='viewer'); }
+function hostPeer(){
+  if (!NET.room) return null;
+  const a = NET.room.peers();
+  for (let i=0;i<a.length;i++){ const q = a[i]; if (q.kind==='viewer' && !q.sameTab && q.presence && q.presence.host===1) return q; }
+  return null;
+}
+function genCode(){
+  const ch = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s = '';
+  for (let i=0;i<5;i++) s += ch[(Math.random()*ch.length)|0];
+  return s;
+}
+function normCode(s){
+  const map = {'۰':'0','۱':'1','۲':'2','۳':'3','۴':'4','۵':'5','۶':'6','۷':'7','۸':'8','۹':'9','٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+  return String(s||'').replace(/[۰-۹٠-٩]/g,d=>map[d]).toUpperCase().replace(/[^A-Z0-9]/g,'');
+}
+function menuMsg(t,ok){ const m = $('menuMsg'); m.textContent = t||''; m.classList.toggle('okmsg',!!ok); }
+function joinErr(e){
+  const c = e && e.code;
+  if (c==='no_room') return 'آنلاین فقط برای کسانی کار می‌کند که وارد حساب شده‌اند و به این بازی دعوت شده‌اند.';
+  if (c==='not_found') return 'گروهی با این کد پیدا نشد. کد را چک کن و مطمئن شو سازنده هنوز توی لابی است.';
+  if (c==='no_lib') return 'کتابخانه‌ی اتصال بارگذاری نشد. اینترنت (یا هات‌اسپات) را چک کن و صفحه را دوباره باز کن.';
+  return 'اتصال به گروه ناموفق بود. اینترنت (یا هات‌اسپات) را چک کن و دوباره بزن.';
+}
+async function openGroup(code,asHost){
+  setMenuBusy(true); menuMsg('در حال اتصال...',true);
+  const api = await netApi();
+  let room = null, err = null;
+  for (let tr=0; tr<4; tr++){
+    try{ room = await api.join(code,asHost); err = null; break; }
+    catch(e){ err = e; if (asHost && e && e.code==='taken'){ code = genCode(); continue; } break; }
+  }
+  if (!room){ setMenuBusy(false); menuMsg(joinErr(err)); return; }
+  NET.room = room; NET.code = code; NET.mode = asHost ? 'host' : 'guest';
+  NET.name = cleanName($('nick').value); NET.joinedAt = performance.now(); NET.hostSeenAt = 0;
+  NET.sid = 0; NET.running = false; NET.res = 0; NET.pend = {}; NET.lastHit = {}; NET.atList = []; NET.atSeq = 0; NET.lastAt = 0; NET.me = null;
+  try{ room.presence({nm:NET.name, host:asHost?1:0, x:0, z:9.5, yaw:0, pt:0, al:0, gun:0, sf:0, ms:0}); }catch(e){}
+  NET.unsub = room.onPeers(onPeers, ()=>{});
+  setMenuBusy(false); menuMsg('');
+  showLobby();
+}
+function setMenuBusy(b){ $('createBtn').disabled = b; $('joinBtn').disabled = b; $('startBtn').disabled = b; }
+function onPeers(ch){
+  const mp = ch.peers.find(q=>q.sameTab);
+  if (mp) NET.me = mp.peer;
+  if (state==='lobby') renderPlist();
+  updNetChip();
+}
+function renderPlist(){
+  const ul = $('plist'); ul.textContent = '';
+  if (!NET.room) return;
+  const ps = viewersOf(NET.room.peers());
+  ps.forEach(q=>{
+    const li = document.createElement('li');
+    const sp = document.createElement('span'); sp.textContent = cleanName(q.presence && q.presence.nm); li.appendChild(sp);
+    if (q.presence && q.presence.host===1){ const b = document.createElement('b'); b.textContent = 'سازنده'; li.appendChild(b); }
+    if (q.sameTab){ const i = document.createElement('i'); i.textContent = 'تو'; li.appendChild(i); }
+    ul.appendChild(li);
+  });
+  $('lobbyMsg').textContent = '';
+}
+function updNetChip(){
+  if (!NET.room || NET.mode==='solo'){ el.netChip.hidden = true; return; }
+  const n = viewersOf(NET.room.peers()).length || 1;
+  el.netChip.textContent = 'گروه ' + NET.code + ' · ' + fa(n) + ' نفر';
+  el.netChip.hidden = false;
+}
+function showLobby(){
+  state = 'lobby';
+  el.menu.hidden = true; el.end.hidden = true; el.lobby.hidden = false;
+  $('codeBig').textContent = NET.code;
+  $('goBtn').hidden = NET.mode!=='host';
+  $('lobbyWait').hidden = NET.mode==='host';
+  $('lobbyMsg').textContent = '';
+  renderPlist(); updNetChip();
+}
+function leaveGroup(msg){
+  const r = NET.room;
+  if (NET.unsub){ try{ NET.unsub(); }catch(e){} NET.unsub = null; }
+  NET.room = null; NET.mode = 'solo'; NET.running = false; NET.me = null;
+  if (r){ try{ const x = r.leave(); if (x && x.catch) x.catch(()=>{}); }catch(e){} }
+  clearRemotes();
+  toMenu(msg);
+}
+function toMenu(msg){
+  cleanWorld(); resetPlayer();
+  state = 'menu'; el.lobby.hidden = true; el.end.hidden = true; el.menu.hidden = false; el.netChip.hidden = true;
+  setMenuBusy(false); menuMsg(msg||'');
+  if (document.exitPointerLock) try{ document.exitPointerLock(); }catch(e){}
+}
+function hostStart(){
+  if (NET.mode!=='host') return;
+  NET.sid++; NET.running = true; NET.res = 0; NET.atList = [];
+  startGame();
+  flushNet();
+}
+function flushNet(){
+  if (!NET.room) return;
+  const o = {};
+  o.x = +p.x.toFixed(2); o.z = +p.z.toFixed(2); o.yaw = +p.yaw.toFixed(2); o.pt = +p.pitch.toFixed(2);
+  o.al = (state==='play' && downT<=0) ? 1 : 0; o.gun = hasGun?1:0; o.sf = shotCount; o.ms = NET.ms?1:0;
+  const pd = NET.pend; NET.pend = {};
+  for (const k in pd) o[k] = pd[k];
+  if (NET.mode==='host'){ o.w = buildWorld(); o.at = NET.atList.slice(-8); }
+  try{ const r = NET.room.presence(o); if (r && r.catch) r.catch(()=>{}); }catch(e){}
+}
+setInterval(flushNet, 110);
+setInterval(()=>{
+  if (NET.mode!=='guest' || !NET.room) return;
+  const now = performance.now();
+  if (hostPeer()) NET.hostSeenAt = now;
+  else if (NET.hostSeenAt){ if (now-NET.hostSeenAt > 5000) leaveGroup('سازنده‌ی گروه خارج شد.'); }
+  else if (now-NET.joinedAt > 4500) leaveGroup('گروهی با این کد پیدا نشد.');
+}, 1000);
+
+function buildWorld(){
+  return {
+    s:NET.sid, st:NET.running?1:0, c:ci, cu:0,
+    f:allDone?2:(fightOn?1:(frzOn?3:0)), pa:paIdx, g:Math.floor(gt),
+    m:mgr.active ? [+mgr.x.toFixed(2),+mgr.z.toFixed(2)] : 0,
+    k:killers.map(k=>[+k.x.toFixed(2),+k.z.toFixed(2),Math.max(0,+k.hp.toFixed(1)),k.dead?1:0]),
+    res:NET.res|0
+  };
+}
+// guest: follow the host's world
+function applyWorld(w){
+  if (!w) return;
+  if (w.st===1 && w.s!==NET.sid){ startGame(w); return; }
+  if (w.st!==1) return;
+  if (state!=='play' && state!=='dying') return;
+  gt = w.g || gt;
+  if ((w.c|0) > ci){
+    if (cust){
+      if (dlgOpen) closeDlg();
+      if (held === cust.d.item) clearHeld();
+      cust.state = 'leave'; leaving.push(cust); cust = null;
+    }
+    ci = w.c|0; delivered = ci;
+  }
+  if (!cust && w.cu===1 && (w.c|0)===ci) spawnCust();
+  if (w.f===3 && !frzOn) beginFreezer();
+  if ((w.f===1 || w.f===2) && !fightOn){ if (frzOn) frzDone = true; beginFinale(); }
+  if (w.f===2 && !allDone) finishFinale();
+  syncKillers(w.k);
+  if ((w.pa|0) > paIdx){
+    const i = Math.min(PA.length-1,(w.pa|0)-1);
+    A.pa(); caption(PA[i][1],true,6000); paIdx = w.pa|0;
+  }
+  if (w.m){
+    if (!mgr.active){ mgr.active = true; manager.visible = true; mgr.x = w.m[0]; mgr.z = w.m[1]; mgr.t = 0; }
+    mgr.tx = w.m[0]; mgr.tz = w.m[1];
+  } else if (mgr.active){
+    mgr.active = false; manager.visible = false; el.danger.style.opacity = '0';
+    caption('ناگهان سکوت شد. حس می‌کنی دیگر نیست.',false,6000);
+  }
+  if (w.res===1 && state==='play') win();
+}
+function processAt(list){
+  if (!Array.isArray(list)) return;
+  if (!NET.me){ const mp = NET.room && NET.room.peers().find(q=>q.sameTab); if (mp) NET.me = mp.peer; }
+  if (!NET.me) return;
+  for (const e of list){
+    if (e && e[0]===NET.me && e[1]>NET.lastAt){
+      NET.lastAt = e[1];
+      if (e[2]>=900) die(); else hurt(e[2]);
+    }
+  }
+}
+// host: read what the guests did
+function hostProcess(){
+  if (!NET.room || NET.mode!=='host' || state!=='play') return;
+  const a = NET.room.peers();
+  for (let i=0;i<a.length;i++){
+    const q = a[i];
+    if (q.sameTab || q.kind!=='viewer') continue;
+    const pr = q.presence || {};
+    if (Array.isArray(pr.hits)){
+      const last = NET.lastHit[q.peer]||0; let mx = last;
+      for (const h of pr.hits){
+        if (h && h.s===NET.sid && h.i>last){
+          if (fightOn && killers[h.k]) damageKiller(h.k, clamp(+h.d||0,0,4));
+          if (h.i>mx) mx = h.i;
+        }
+      }
+      NET.lastHit[q.peer] = mx;
+    }
+    if (typeof pr.dv==='number' && cust && cust.state==='wait' && pr.dv===NET.sid*100+ci+1) advance();
+    if (pr.ex===NET.sid && allDone && !NET.res && state==='play'){ NET.res = 1; win(); }
+    if (pr.ev===NET.sid && frzOn && !frzDone) takeEvidence();
+  }
+}
+
+/* remote players */
+function makeRemote(nm){
+  const fig = makePerson('normal');
+  const lab = labelSprite(nm,256,64,32,'#ffe9a8','rgba(8,10,10,.82)',1.3,0.33);
+  lab.position.set(0,2.3,0); fig.add(lab);
+  const gb = new T.Mesh(new T.BoxGeometry(0.07,0.09,0.3), new T.MeshLambertMaterial({color:0x1a1d20}));
+  gb.position.set(0.43,0.95,0.2); gb.visible = false; fig.add(gb);
+  scene.add(fig);
+  return {fig:fig, gb:gb, nm:nm, x:0, z:0, yaw:0, tx:0, tz:0, tyaw:0, sf:0, al:1};
+}
+function disposeRemote(r){ scene.remove(r.fig); }
+function clearRemotes(){ for (const id in NET.rem){ disposeRemote(NET.rem[id]); } NET.rem = {}; }
+function updRemotes(dt){
+  if (!NET.room){ if (Object.keys(NET.rem).length) clearRemotes(); return; }
+  const live = (state==='play' || state==='dying' || state==='over');
+  const seen = {};
+  const a = NET.room.peers();
+  for (let i=0;i<a.length;i++){
+    const q = a[i];
+    if (q.sameTab || q.kind!=='viewer') continue;
+    const pr = q.presence || {};
+    if (typeof pr.x!=='number' || typeof pr.z!=='number') continue;
+    seen[q.peer] = 1;
+    const nm = cleanName(pr.nm);
+    let r = NET.rem[q.peer];
+    if (!r || r.nm!==nm){
+      if (r) disposeRemote(r);
+      r = makeRemote(nm); r.x = pr.x; r.z = pr.z; r.yaw = pr.yaw||0; r.sf = pr.sf|0;
+      NET.rem[q.peer] = r;
+    }
+    r.tx = pr.x; r.tz = pr.z; r.tyaw = pr.yaw||0; r.al = pr.al===0 ? 0 : 1;
+    r.fig.visible = live;
+    r.gb.visible = pr.gun===1;
+    if ((pr.sf|0) > r.sf){
+      r.sf = pr.sf|0;
+      if (live){
+        const pt = pr.pt||0, cp = Math.cos(pt);
+        const dx = -Math.sin(r.yaw)*cp, dy = Math.sin(pt), dz = -Math.cos(r.yaw)*cp;
+        addTracer(r.x+dx*0.5,1.35,r.z+dz*0.5, r.x+dx*14,1.35+dy*14,r.z+dz*14);
+        const rel = wrapAng(Math.atan2(-(r.x-p.x),-(r.z-p.z)) - p.yaw);
+        const dist = Math.hypot(r.x-p.x,r.z-p.z);
+        A.gunFar(-clamp(Math.sin(rel),-1,1), 1/(1+dist*0.18));
+      }
+    }
+  }
+  for (const id in NET.rem){ if (!seen[id]){ disposeRemote(NET.rem[id]); delete NET.rem[id]; } }
+  const k = Math.min(1,dt*12);
+  for (const id in NET.rem){
+    const r = NET.rem[id];
+    r.x += (r.tx-r.x)*k; r.z += (r.tz-r.z)*k; r.yaw += wrapAng(r.tyaw-r.yaw)*k;
+    r.fig.position.set(r.x, r.al?0:0.18, r.z);
+    r.fig.rotation.y = r.yaw + Math.PI;
+    r.fig.rotation.x = r.al ? 0 : -1.4;
+  }
+}
+
+/* ---------- collision ---------- */
+function hit(x,z,r){
+  if (x < XMIN+r || x > XMAX-r || z < ZMIN+r || z > ZMAX-r) return true;
+  for (const b of (hitLvl ? boxes1 : boxes)) if (x > b.x0-r && x < b.x1+r && z > b.z0-r && z < b.z1+r) return true;
+  return false;
+}
+function slide(o,dx,dz,r){
+  const nx = o.x+dx; if (!hit(nx,o.z,r)) o.x = nx;
+  const nz = o.z+dz; if (!hit(o.x,nz,r)) o.z = nz;
+}
+function blocked(x0,z0,x1,z1){
+  const d = Math.hypot(x1-x0,z1-z0), n = Math.max(2,Math.ceil(d/0.4));
+  for (let i=1;i<n;i++){
+    const t = i/n, x = x0+(x1-x0)*t, z = z0+(z1-z0)*t;
+    for (const b of (hitLvl ? boxes1 : boxes)) if (x>b.x0 && x<b.x1 && z>b.z0 && z<b.z1) return true;
+  }
+  return false;
+}
+
+/* path grid so the killers can walk around the shelves */
+const GC = 0.5, GX0 = -14, GZ0 = -12, GNX = 56, GNZ = 48;
+const gridFree = new Uint8Array(GNX*GNZ), GQ = new Int32Array(GNX*GNZ);
+let gridReady = false;
+const cellX = x => clamp(Math.floor((x-GX0)/GC),0,GNX-1);
+const cellZ = z => clamp(Math.floor((z-GZ0)/GC),0,GNZ-1);
+function buildGrid(){
+  for (let iz=0;iz<GNZ;iz++) for (let ix=0;ix<GNX;ix++) gridFree[iz*GNX+ix] = hit(GX0+(ix+0.5)*GC, GZ0+(iz+0.5)*GC, 0.5) ? 0 : 1;
+  gridReady = true;
+}
+function buildFlow(buf,tx,tz){
+  if (!gridReady) buildGrid();
+  buf.fill(-1);
+  const s = tz*GNX+tx; buf[s] = 0; let qh = 0, qt = 0; GQ[qt++] = s;
+  while (qh<qt){
+    const c = GQ[qh++], cx = c%GNX, cz = (c/GNX)|0, nd = buf[c]+1;
+    for (let oz=-1;oz<=1;oz++) for (let ox=-1;ox<=1;ox++){
+      if (!ox && !oz) continue;
+      const nx = cx+ox, nz = cz+oz; if (nx<0||nz<0||nx>=GNX||nz>=GNZ) continue;
+      const ni = nz*GNX+nx; if (buf[ni]>=0 || !gridFree[ni]) continue;
+      if (ox && oz && (!gridFree[cz*GNX+nx] || !gridFree[nz*GNX+cx])) continue;
+      buf[ni] = nd; GQ[qt++] = ni;
+    }
+  }
+}
+
+/* ---------- view helpers ---------- */
+const fwd = new T.Vector3();
+function facing(x,z,y,thr){
+  camera.getWorldDirection(fwd);
+  const vx = x-p.x, vy = (y===undefined?1.2:y)-(p.y+1.65), vz = z-p.z;
+  const l = Math.hypot(vx,vy,vz) || 1;
+  return (vx*fwd.x+vy*fwd.y+vz*fwd.z)/l > thr;
+}
+function arrowFor(x,z){
+  const dx = x-p.x, dz = z-p.z;
+  const rel = wrapAng(Math.atan2(-dx,-dz) - p.yaw) * 180/Math.PI;     // + = left
+  const a = Math.abs(rel);
+  const left = rel > 0;
+  if (a < 22.5) return '↑';
+  if (a < 67.5) return left ? '↖' : '↗';
+  if (a < 112.5) return left ? '←' : '→';
+  if (a < 157.5) return left ? '↙' : '↘';
+  return '↓';
+}
+
+/* ---------- gameplay ---------- */
+function spawnCust(){
+  const d = CUST[ci % CUST.length];
+  const fig = makePerson(d.type,d.fem);
+  fig.position.set(d.spot[0],0,d.spot[1]); scene.add(fig);
+  cust = {d:d, fig:fig, talked:false, accepted:false, state:'wait', seed:rand(0,10), dlv:false};
+  A.chime();
+  caption('مشتری جدید داخل فروشگاه است.',false,3500);
+  
+}
+function activateManager(){
+  mgr.active = true; manager.visible = true;
+  const pts2 = [[12,-10],[-12,-10],[12,5],[-12,5],[0,-10.5]];
+  let best = pts2[0], bd = 0;
+  for (const q of pts2){ const d = Math.hypot(q[0]-p.x,q[1]-p.z); if (d > bd){ bd = d; best = q; } }
+  mgr.x = best[0]; mgr.z = best[1]; mgr.stuck = 0; mgr.t = 0; mgr.freeze = 0;
+  manager.position.set(mgr.x,0,mgr.z);
+}
+function mgrSpeed(){ return 1.9 + Math.min(mgr.t,60)/60*0.7; }
+function mgrRelocate(){
+  const q = [[12,-10],[-12,-10],[12,5],[-12,5],[0,-10.5]];
+  const tg = playerTargets();
+  let best = q[0], bd = -1;
+  for (const a of q){
+    let m = 1e9; for (const t of tg) m = Math.min(m, Math.hypot(a[0]-t.x,a[1]-t.z));
+    if (m > bd){ bd = m; best = a; }
+  }
+  mgr.x = best[0]; mgr.z = best[1]; mgr.freeze = 7; mgr.stuck = 0;
+}
+
+function currentTarget(){
+  if (shop){
+    if (!cust){ if (crowd.length) return {x:-3,z:6,txt:'مشتری‌ها دارند خرید می‌کنند ('+fa(crowd.length)+' نفر)'}; return null; }
+    if (cust.state === 'wait') return {x:cust.fig.position.x,z:cust.fig.position.z,txt:'مشتری منتظر حساب است'};
+    return {x:cust.fig.position.x,z:cust.fig.position.z,txt:'مشتری دارد خرید می‌کند'};
+    if (!cust.asked) return {x:cust.fig.position.x,z:cust.fig.position.z,txt:'با مشتری صحبت کن'};
+    const m = missing();
+    if (!m.length) return {x:cust.fig.position.x,z:cust.fig.position.z,txt:'سبد را به مشتری بده'};
+    const id = m[0];
+    if (stock[id]<=0) return {x:PCP.x,z:PCP.z,txt:'«'+nm(id)+'» تمام شده؛ از کامپیوتر سفارش بده'};
+    { const dd = items[id].def; if ((dd.lv|0) !== p.lv) return {x:12.4,z:p.lv ? 2.2 : 9.6,txt:'برو پله‌ها'}; }
+    return {x:items[id].def.x,z:items[id].def.z,txt:'پیدا کن: «'+nm(id)+'»', _z:'از انبار بیار: «'+nm(id)+'»'};
+  }
+  if (allDone) return {x:9,z:11,txt:'از در خروج برو بیرون'};
+  if (frzOn && !fightOn){
+    if (frzDone) return {x:9,z:11,txt:'صدای پا می‌آید...'};
+    return {x:FZ.x,z:FZ.z,txt:'برو سردخانه، کنار فریزر'};
+  }
+  if (fightOn){
+    if (!hasGun) return {x:GUNP.x,z:GUNP.z,txt:'کلت را از روی صندوق بردار'};
+    let best = null, bd = 1e9, n = 0;
+    for (const k of killers){ if (k.dead) continue; n++; const d = Math.hypot(k.x-p.x,k.z-p.z); if (d<bd){ bd = d; best = k; } }
+    if (best) return {x:best.x,z:best.z,txt:'قاتل‌ها را بزن ('+fa(n)+' مانده)'};
+    return {x:9,z:11,txt:'قاتل‌ها از در می‌آیند. آماده باش'};
+  }
+  if (!cust || cust.dlv) return null;
+  const d = cust.d, f = items[d.item];
+  if (!cust.talked) return {x:cust.fig.position.x,z:cust.fig.position.z,txt:'با مشتری صحبت کن'};
+  if (!cust.accepted) return {x:cust.fig.position.x,z:cust.fig.position.z,txt:'دوباره با مشتری صحبت کن'};
+  if (held === d.item && p.lv) return {x:12.4,z:2.2,txt:'برو پایین و '+f.def.name+' را برسان'};
+  if (held === d.item) return {x:cust.fig.position.x,z:cust.fig.position.z,txt:''+f.def.name+' را به مشتری برسان'};
+  if ((f.def.lv|0) !== p.lv) return {x:12.4,z:p.lv ? 2.2 : 9.6,txt:(f.def.lv ? 'برو طبقه بالا (پله‌ها سمت راست): ' : 'برو طبقه پایین: ')+'«'+f.def.name+'»'};
+  return {x:f.def.x,z:f.def.z,txt:'«'+f.def.name+'» را پیدا کن'};
+}
+function nearestInteract(){
+  let best = null, bd = 99;
+  if (cust && cust.state === 'wait' && !cust.dlv){
+    const d = Math.hypot(cust.fig.position.x-p.x,cust.fig.position.z-p.z);
+    if (d < 3.0){ best = {type:'talk'}; bd = d-0.6; }
+  }
+  { const d = Math.hypot(WH.x-p.x,WH.z-p.z);
+    if (d < 3.4 && d < bd && facing(WH.x,WH.z,WH.y,0.45)){ best = {type:'wheel'}; bd = d; } }
+  if (lotWinner && lotWinner.phase === 'wait'){
+    const d = Math.hypot(lotWinner.x-p.x,lotWinner.z-p.z);
+    if (d < 3.0 && d < bd){ best = {type:'prize'}; bd = d-0.6; }
+  }
+  if (fightOn && !hasGun && !allDone){
+    const d = Math.hypot(GUNP.x-p.x,GUNP.z-p.z);
+    if (d < 2.8 && d < bd && facing(GUNP.x,GUNP.z,GUNP.y,0.5)){ best = {type:'gun'}; bd = d; }
+  }
+  { const d0 = Math.hypot(PCP.x-p.x,PCP.z-p.z); if (d0 < 3.4 && d0 < bd && facing(PCP.x,PCP.z,1.3,0.35)){ best = {type:'pc'}; bd = d0; } }
+  if (shop){
+    let d;
+    for (const id in items){ const c = items[id].def; if (stock[id]<=0 || (c.lv|0) !== p.lv || FRIDGE[id]) continue; d = Math.hypot(c.x-p.x,c.z-p.z);
+      if (d < 2.4 && d < bd && facing(c.x,c.z,c.y,0.6)){ best = {type:'crate',id:id}; bd = d; } }
+  }
+  if (frzOn && !frzDone){
+    const d = Math.hypot(FZ.x-p.x,FZ.z-p.z);
+    if (d < 2.8 && d < bd && facing(FZ.x,1.1,1.1,0.5)){ best = {type:'ev'}; bd = d; }
+  }
+  if (!shop){
+    for (const id in items){
+      const it = items[id]; if (it.taken || (it.def.lv|0) !== p.lv) continue;
+      const d = Math.hypot(it.def.x-p.x,it.def.z-p.z);
+      if (d < 2.4 && d < bd && facing(it.def.x,it.def.z,it.def.y,0.6)){ best = {type:'pick',id:id}; bd = d; }
+    }
+  }
+  if (!best && p.lv===0){
+    const fd = Math.hypot(FRX-p.x,FRZ-p.z), cd = Math.hypot(CFX-p.x,CFZ-p.z);
+    if (fd < 2.8 && facing(13.4,FRZ,1.1,0.45)) best = {type: frOpen ? 'fridge' : 'fdoor'};
+    else if (cd < 2.8 && facing(CFX,CFZ,0.6,0.35)) best = {type: cfOpen ? 'cfreezer' : 'cfdoor'};
+  }
+  return best;
+}
+function doInteract(){
+  if (state !== 'play' || dlgOpen || downT>0) return;
+  const n = nearestInteract(); if (!n) return;
+  A.init();
+  if (n.type === 'talk'){ if (shop) shopTalk2(); else startTalk(); }
+  else if (n.type === 'pick') pickItem(n.id);
+  else if (n.type === 'gun') takeGun();
+  else if (n.type === 'ev') takeEvidence();
+  else if (n.type === 'fdoor'){ frOpen = true; A.click(); }
+  else if (n.type === 'cfdoor'){ cfOpen = true; A.click(); }
+  else if (n.type === 'fridge') pickMenu('یخچال نوشیدنی',['water','soda','doogh'],()=>{ frOpen = false; });
+  else if (n.type === 'cfreezer') pickMenu('فریزر بستنی',['icecone','icebar','icecup'],()=>{ cfOpen = false; });
+  else if (n.type === 'crate') takeCrate(n.id);
+  else if (n.type === 'pc') openPC();
+  else if (n.type === 'wheel') wheelUse();
+  else if (n.type === 'prize') prizeTalk();
+}
+function wheelUse(){
+  if (wspin){ caption('گردونه در حال چرخیدن است.',false,2000); return; }
+  if (lotReg.length >= LOT_N){ if (lotWinner){ caption('اول جایزه‌ی برنده‌ی قبلی را بده.',true,3000); return; } spinWheel(); return; }
+  caption('قرعه‌کشی: ' + fa(lotReg.length) + ' از ' + fa(LOT_N) + ' نفر' + (lotReg.length ? ' · ' + lotReg.join('، ') : ''),false,4500);
+}
+function pickItem(id){
+  if (held){ items[held].taken = false; items[held].mesh.visible = true; items[held].label.visible = true; }
+  held = id; items[id].taken = true; items[id].mesh.visible = false; items[id].label.visible = false;
+  heldMesh.material.color.setHex(items[id].def.col); heldMesh.visible = true;
+  el.held.textContent = items[id].def.name; A.pick();
+}
+function clearHeld(){
+  if (held){ items[held].mesh.visible = false; items[held].label.visible = false; }
+  held = null; heldMesh.visible = false; el.held.textContent = 'هیچی';
+}
+function takeGun(){
+  hasGun = true; ammo = MAG; reloadT = 0; gunM.visible = true; heldMesh.position.x = -0.3;
+  el.held.textContent = 'کلت'; A.pick();
+  caption('کلت دستته. کلیک، Space یا دکمه‌ی قرمز برای شلیک. R برای خشاب.',false,6000);
+}
+
+/* dialogue */
+function startTalk(){
+  const c = cust; dlgOpen = true; el.dlg.hidden = false;
+  el.who.textContent = c.d.name;
+  let id;
+  if (!c.talked) id = 'intro';
+  else if (!c.accepted) id = 'ask';
+  else if (!held) id = 'again';
+  else if (held === c.d.item) id = 'give';
+  else id = 'wrong';
+  showNode(id);
+}
+function showNode(id){
+  const c = cust, n = getNode(c.d,id);
+  el.say.textContent = n.t;
+  el.choices.textContent = '';
+  n.c.forEach((ch,i)=>{
+    const b = document.createElement('button'); b.className = 'choice'; b.type = 'button';
+    const k = document.createElement('kbd'); k.textContent = fa(i+1);
+    b.append(ch[0],k);
+    b.addEventListener('click', ()=>choose(ch[1]));
+    el.choices.appendChild(b);
+  });
+  curNode = n;
+  if (id === 'intro') c.talked = true;
+}
+function choose(next){
+  A.click();
+  if (!cust){ closeDlg(); return; }
+  if (next === 'close'){ closeDlg(); return; }
+  if (next === 'accept_close'){ cust.accepted = true; closeDlg(); return; }
+  if (next === 'accept'){ cust.accepted = true; showNode('accept'); return; }
+  if (next === 'finish'){ closeDlg(); finishCust(); return; }
+  if (next === 'ask' && !cust.talked) cust.talked = true;
+  showNode(next);
+}
+function closeDlg(){ dlgOpen = false; el.dlg.hidden = true; curNode = null; try{ stage.focus(); }catch(e){} }
+// this player handed over the item
+function finishCust(){
+  clearHeld(); A.ok();
+  if (!cust) return;
+  if (NET.mode==='guest'){ cust.dlv = true; NET.pend.dv = NET.sid*100+ci+1; return; }
+  advance();
+}
+// the customer is satisfied (solo, host)
+function advance(){
+  if (!cust) return;
+  if (dlgOpen) closeDlg();
+  if (held === cust.d.item) clearHeld();
+  A.ok();
+  cust.state = 'leave'; delivered++;
+  const old = cust; cust = null;
+  leaving.push(old);
+  ci++;
+  spawnAt = gt + 5;
+}
+
+/* endless shop mode */
+const PRICE = {milk:10,eggs:8,cheese:12,yogurt:6,butter:9,cream:7,doogh:5,sausage:11,bread:4,cake:9,biscuit:5,water:2,juice:6,soda:4,malt:5,chips:5,choco:7,puff:4,nuts:12,tea:9,sugar:5,oil:13,pasta:6,rice:18,lentil:8,beans:7,tuna:8,paste:6};
+Object.assign(PRICE,{soap:6,shampoo:12,tissue:4,toothpaste:7,battery:9,bulb:8,detergent:15,mask:3,notebook:5,pen:2,socks:5,hat:10,umbrella:14,doll:12,cup:4,plate:6,ball:9,headphones:20,charger:10,phonecase:8,icecone:6,icebar:4,icecup:5});
+Object.assign(PRICE,{chips_vin:5,chips_onion:5,chips_hot:5,chips_tom:5,});
+Object.assign(PRICE,{milk:120000,eggs:350000,cheese:350000,yogurt:130000,butter:250000,cream:70000,doogh:60000,sausage:250000,bread:40000,cake:120000,biscuit:80000,water:25000,juice:100000,soda:60000,malt:90000,chips:120000,chips_vin:120000,chips_onion:120000,chips_hot:120000,chips_tom:120000,choco:100000,puff:60000,nuts:500000,tea:450000,sugar:150000,oil:900000,pasta:120000,rice:1800000,lentil:200000,beans:220000,tuna:250000,paste:180000,soap:80000,shampoo:350000,tissue:150000,toothpaste:200000,battery:100000,bulb:120000,detergent:600000,mask:20000,notebook:100000,pen:30000,socks:150000,hat:300000,umbrella:500000,doll:600000,cup:100000,plate:200000,ball:500000,headphones:1500000,charger:600000,phonecase:300000,icecone:120000,ic
